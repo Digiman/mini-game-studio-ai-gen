@@ -134,7 +134,7 @@ function dropPiece(col) {
   turnDisplay.textContent = turn === 1 ? 'Player (🔴)' : vsAI ? 'AI (🟡)' : 'Player 2 (🟡)';
   if (vsAI && turn === 2) {
     animating = true;
-    setTimeout(() => { aiMove(); animating = false; }, 300);
+    setTimeout(() => { animating = false; aiMove(); }, 300);
   }
 }
 
@@ -260,12 +260,13 @@ canvas.addEventListener('click', (e) => {
   const rect = canvas.getBoundingClientRect();
   const scaleX = W / rect.width;
   const col = Math.floor((e.clientX - rect.left) * scaleX / CELL_W);
-  if (col >= 0 && col < COLS && turn === 1) dropPiece(col);
+  const humanTurn = turn === 1 || (!vsAI && turn === 2);
+  if (col >= 0 && col < COLS && humanTurn) dropPiece(col);
 });
 
 document.addEventListener('keydown', (e) => {
   const n = parseInt(e.key);
-  if (n >= 1 && n <= 7 && turn === 1) { dropPiece(n - 1); }
+  if (n >= 1 && n <= 7 && (turn === 1 || (!vsAI && turn === 2))) { dropPiece(n - 1); }
   if (e.key === 'r' || e.key === 'R') resetGame();
 });
 

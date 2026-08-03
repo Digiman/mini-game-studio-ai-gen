@@ -89,6 +89,20 @@ All projects are built with **vanilla JavaScript (ES6)** and the **Canvas 2D API
 2. Open **`index.html`** for the visual catalog, or open any `.html` file from the `games/` folder
 3. That's it — no server, no install, no build
 
+## 🤖 How It Was Built
+
+This project is a showcase of **AI-assisted game development**. Every game, the catalog homepage, the docs viewer, and the documentation were authored by an AI coding agent rather than written by hand.
+
+**The toolchain:**
+
+- **ZCode** — the interactive terminal-based coding agent used to design, write, and iterate on every file in this repo
+- **OpenRouter** — the API gateway that routes the agent's requests to the underlying model
+- **DeepSeek V4 Flash** — the large language model generating the code, visuals logic, and documentation
+
+The workflow was simple: each game was requested in natural language, ZCode generated the single-file implementation, and the output was reviewed and refined in an interactive loop. All 14 games, the themed catalog (`index.html`), the documentation viewer (`docs-viewer.html`), and the served docs were produced this way.
+
+> **TL;DR** — Human ideas + AI execution. Everything in `games/`, `docs/`, and the two top-level HTML files was generated with **ZCode + OpenRouter + DeepSeek V4 Flash**.
+
 ## 🧠 AI Model Testing
 
 These games were designed to test different AI model capabilities:
