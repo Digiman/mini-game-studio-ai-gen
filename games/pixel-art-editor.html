@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pixel Art Editor</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif; background: #0a0a12; color: #e0e0e0;
+    min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 16px;
+  }
+  .container { max-width: 560px; width: 100%; text-align: center; }
+  h1 {
+    font-size: 1.4rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;
+    background: linear-gradient(90deg, #ff00cc, #ff8800, #ffcc00);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 2px;
+  }
+  .subtitle { font-size: 0.7rem; color: #555; margin-bottom: 8px; letter-spacing: 1px; }
+  .game-wrapper { background: #0d0d1a; border-radius: 12px; padding: 6px; margin-bottom: 8px; }
+  canvas { display: block; width: 100%; aspect-ratio: 1; border-radius: 8px; background: #08080f; cursor: crosshair; image-rendering: pixelated; touch-action: none; }
+  .hud { display: flex; justify-content: space-between; padding: 4px 4px 0; font-size: 0.8rem; }
+  .hud-label { color: #555; font-size: 0.6rem; text-transform: uppercase; letter-spacing: 1px; }
+  .hud-value { font-size: 1rem; font-weight: 700; color: #888; }
+  .controls { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 6px 0; align-items: center; }
+  .btn {
+    padding: 6px 14px; border: none; border-radius: 8px; font-size: 0.75rem; font-weight: 700; cursor: pointer;
+    text-transform: uppercase; letter-spacing: 0.5px; transition: transform 0.1s, box-shadow 0.2s;
+  }
+  .btn:active { transform: scale(0.95); }
+  .btn-undo { background: #4488ff; color: #fff; }
+  .btn-redo { background: #6600ff; color: #fff; }
+  .btn-clear { background: #ff3344; color: #fff; }
+  .btn-export { background: #66ff88; color: #0a0a12; }
+  .btn-fill { background: #ff8800; color: #0a0a12; }
+  .btn-eraser { background: #444; color: #eee; }
+  .btn-eraser.active { background: #ff8800; color: #0a0a12; }
+  .color-grid { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; margin: 4px 0; }
+  .color-swatch { width: 26px; height: 26px; border-radius: 4px; cursor: pointer; border: 2px solid transparent; transition: border-color 0.2s; }
+  .color-swatch:hover { border-color: #fff; }
+  .color-swatch.active { border-color: #ffcc00; box-shadow: 0 0 8px rgba(255,204,0,0.4); }
+  .controls label { font-size: 0.7rem; color: #888; display: inline-flex; align-items: center; gap: 4px; }
+  input[type="range"] { width: 56px; accent-color: #ff8800; }
+  input[type="color"] { width: 28px; height: 28px; border: 2px solid #444; border-radius: 4px; background: none; cursor: pointer; padding: 0; }
+  input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+  input[type="color"]::-webkit-color-swatch { border: none; border-radius: 2px; }
+  .key-hint { font-size: 0.55rem; color: #444; margin-top: 4px; }
+  .key-hint kbd { background: #14142a; padding: 1px 5px; border-radius: 3px; border: 1px solid #333; font-family: inherit; color: #777; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🎨 Pixel Art Editor</h1>
+  <p class="subtitle">Paint · pixel by pixel</p>
+  <div class="game-wrapper">
+    <canvas id="canvas" width="480" height="480"></canvas>
+  </div>
+  <div class="hud">
+    <div class="hud-label">Size: <span id="sizeDisplay">16×16</span></div>
+    <div class="hud-value" id="sizeBtn">🔲 <span id="gridSizeDisplay">16</span></div>
+  </div>
+  <div class="color-grid" id="palette"></div>
+  <div class="controls">
+    <button class="btn btn-undo" id="undoBtn">↩ Undo</button>
+    <button class="btn btn-redo" id="redoBtn">↪ Redo</button>
+    <button class="btn btn-clear" id="clearBtn">✕ Clear</button>
+    <button class="btn btn-fill" id="fillBtn">🪣 Fill</button>
+    <button class="btn btn-eraser" id="eraserBtn">🧹 Eraser</button>
+    <button class="btn btn-export" id="exportBtn">⬇ PNG</button>
+    <label>Size <input type="range" id="penSize" min="1" max="4" value="1"></label>
+  </div>
+  <div class="key-hint"><kbd>Click</kbd> <kbd>Drag</kbd> paint · <kbd>Z</kbd> undo · <kbd>Y</kbd> redo · <kbd>E</kbd> eraser · <kbd>G</kbd> fill</div>
+</div>
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const W=480, H=480;
+const paletteEl = document.getElementById('palette');
+const undoBtn = document.getElementById('undoBtn');
+const redoBtn = document.getElementById('redoBtn');
+const clearBtn = document.getElementById('clearBtn');
+const fillBtn = document.getElementById('fillBtn');
+const eraserBtn = document.getElementById('eraserBtn');
+const exportBtn = document.getElementById('exportBtn');
+const penSize = document.getElementById('penSize');
+const sizeDisplay = document.getElementById('sizeDisplay');
+const gridSizeDisplay = document.getElementById('gridSizeDisplay');
+
+const COLORS = ['#ff3344','#ff8800','#ffcc00','#66ff88','#00ffff','#4488ff','#aa66ff','#ff00cc','#ff6699','#ffffff','#888888','#333333','#1a1a2e','#000000'];
+let gridSize = 16;
+let grid = Array.from({length: gridSize}, () => Array(gridSize).fill('#1a1a2e'));
+let currentColor = '#ff8800';
+let mouseDown = false;
+let eraserMode = false;
+let history = [];
+let historyIdx = -1;
+let cellSize = W / gridSize;
+
+function saveState() {
+  const state = grid.map(r => [...r]);
+  history = history.slice(0, historyIdx + 1);
+  history.push(state);
+  if (history.length > 50) history.shift();
+  historyIdx = history.length - 1;
+}
+
+function undo() {
+  if (historyIdx <= 0) return;
+  historyIdx--;
+  grid = history[historyIdx].map(r => [...r]);
+  draw();
+}
+
+function redo() {
+  if (historyIdx >= history.length - 1) return;
+  historyIdx++;
+  grid = history[historyIdx].map(r => [...r]);
+  draw();
+}
+
+function buildPalette() {
+  paletteEl.innerHTML = '';
+  COLORS.forEach(c => {
+    const swatch = document.createElement('div');
+    swatch.className = 'color-swatch' + (c === currentColor ? ' active' : '');
+    swatch.style.background = c;
+    swatch.addEventListener('click', () => {
+      currentColor = c; eraserMode = false; eraserBtn.classList.remove('active');
+      paletteEl.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+      swatch.classList.add('active');
+    });
+    paletteEl.appendChild(swatch);
+  });
+  // Custom color picker
+  const picker = document.createElement('input');
+  picker.type = 'color';
+  picker.value = currentColor;
+  picker.addEventListener('input', () => {
+    currentColor = picker.value; eraserMode = false; eraserBtn.classList.remove('active');
+    paletteEl.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+  });
+  paletteEl.appendChild(picker);
+}
+
+function resizeGrid(size) {
+  gridSize = size;
+  cellSize = W / gridSize;
+  const newGrid = Array.from({length: gridSize}, () => Array(gridSize).fill('#1a1a2e'));
+  for (let r = 0; r < Math.min(gridSize, history[0]?.length || gridSize); r++)
+    for (let c = 0; c < Math.min(gridSize, history[0]?.[0]?.length || gridSize); c++)
+      if (history[0]?.[r]?.[c]) newGrid[r][c] = history[0][r][c];
+  grid = newGrid;
+  history = [grid.map(r => [...r])];
+  historyIdx = 0;
+  sizeDisplay.textContent = `${gridSize}×${gridSize}`;
+  gridSizeDisplay.textContent = gridSize;
+  draw();
+}
+
+function paint(mx, my) {
+  const col = Math.floor(mx / cellSize);
+  const row = Math.floor(my / cellSize);
+  if (row < 0 || row >= gridSize || col < 0 || col >= gridSize) return;
+  const pen = parseInt(penSize.value, 10);
+  const color = eraserMode ? '#1a1a2e' : currentColor;
+  for (let dr = 0; dr < pen; dr++) for (let dc = 0; dc < pen; dc++) {
+    const r = row + dr, c = col + dc;
+    if (r < gridSize && c < gridSize) grid[r][c] = color;
+  }
+  draw();
+}
+
+function floodFill(mx, my) {
+  const col = Math.floor(mx / cellSize);
+  const row = Math.floor(my / cellSize);
+  if (row < 0 || row >= gridSize || col < 0 || col >= gridSize) return;
+  const target = grid[row][col];
+  const color = eraserMode ? '#1a1a2e' : currentColor;
+  if (target === color) return;
+  saveState();
+  const stack = [[row, col]];
+  while (stack.length) {
+    const [r, c] = stack.pop();
+    if (r < 0 || r >= gridSize || c < 0 || c >= gridSize) continue;
+    if (grid[r][c] !== target) continue;
+    grid[r][c] = color;
+    stack.push([r-1,c],[r+1,c],[r,c-1],[r,c+1]);
+  }
+  draw();
+}
+
+function draw() {
+  const imgData = ctx.createImageData(W, H);
+  const data = imgData.data;
+  for (let r = 0; r < gridSize; r++) for (let c = 0; c < gridSize; c++) {
+    const hex = grid[r][c];
+    const rgb = hexToRgb(hex);
+    for (let dy = 0; dy < cellSize; dy++) for (let dx = 0; dx < cellSize; dx++) {
+      const px = c * cellSize + dx, py = r * cellSize + dy;
+      const idx = (py * W + px) * 4;
+      data[idx] = rgb.r; data[idx+1] = rgb.g; data[idx+2] = rgb.b; data[idx+3] = 255;
+    }
+  }
+  ctx.putImageData(imgData, 0, 0);
+  // Grid lines
+  if (gridSize <= 32) {
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = 0.5;
+    for (let i = 0; i <= gridSize; i++) {
+      const p = i * cellSize;
+      ctx.beginPath(); ctx.moveTo(p, 0); ctx.lineTo(p, H); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, p); ctx.lineTo(W, p); ctx.stroke();
+    }
+  }
+}
+
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1,3), 16);
+  const g = parseInt(hex.slice(3,5), 16);
+  const b = parseInt(hex.slice(5,7), 16);
+  return {r,g,b};
+}
+
+canvas.addEventListener('mousedown', (e) => {
+  mouseDown = true;
+  const rect = canvas.getBoundingClientRect();
+  const scale = W / rect.width;
+  const mx = (e.clientX - rect.left) * scale;
+  const my = (e.clientY - rect.top) * scale;
+  saveState();
+  paint(mx, my);
+});
+canvas.addEventListener('mousemove', (e) => {
+  if (!mouseDown) return;
+  const rect = canvas.getBoundingClientRect();
+  const scale = W / rect.width;
+  const mx = (e.clientX - rect.left) * scale;
+  const my = (e.clientY - rect.top) * scale;
+  paint(mx, my);
+});
+canvas.addEventListener('mouseup', () => mouseDown = false);
+canvas.addEventListener('mouseleave', () => mouseDown = false);
+canvas.addEventListener('touchstart', (e) => { e.preventDefault(); const t=e.touches[0]; const rect=canvas.getBoundingClientRect(); const scale=W/rect.width; saveState(); paint((t.clientX-rect.left)*scale, (t.clientY-rect.top)*scale); }, {passive:false});
+canvas.addEventListener('touchmove', (e) => { e.preventDefault(); if(e.touches.length){const t=e.touches[0]; const rect=canvas.getBoundingClientRect(); const scale=W/rect.width; paint((t.clientX-rect.left)*scale, (t.clientY-rect.top)*scale);} }, {passive:false});
+
+undoBtn.addEventListener('click', undo);
+redoBtn.addEventListener('click', redo);
+clearBtn.addEventListener('click', () => { saveState(); grid = Array.from({length:gridSize},()=>Array(gridSize).fill('#1a1a2e')); draw(); });
+fillBtn.addEventListener('click', () => {
+  canvas.style.cursor = 'cell';
+  const handler = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const scale = W / rect.width;
+    const mx = (e.clientX - rect.left) * scale;
+    const my = (e.clientY - rect.top) * scale;
+    floodFill(mx, my);
+    canvas.style.cursor = 'crosshair';
+    canvas.removeEventListener('click', handler);
+  };
+  canvas.addEventListener('click', handler);
+});
+eraserBtn.addEventListener('click', () => {
+  eraserMode = !eraserMode;
+  eraserBtn.classList.toggle('active');
+});
+exportBtn.addEventListener('click', () => {
+  const link = document.createElement('a');
+  link.download = 'pixel-art.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+});
+sizeDisplay.addEventListener('click', () => {
+  const sizes = [8,16,24,32,48];
+  const idx = sizes.indexOf(gridSize);
+  resizeGrid(sizes[(idx + 1) % sizes.length]);
+});
+gridSizeDisplay.addEventListener('click', () => {
+  const sizes = [8,16,24,32,48];
+  const idx = sizes.indexOf(gridSize);
+  resizeGrid(sizes[(idx + 1) % sizes.length]);
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'z' || e.key === 'Z') { e.preventDefault(); undo(); }
+  if (e.key === 'y' || e.key === 'Y') { e.preventDefault(); redo(); }
+  if (e.key === 'e' || e.key === 'E') { eraserBtn.click(); }
+  if (e.key === 'g' || e.key === 'G') { fillBtn.click(); }
+});
+
+buildPalette();
+saveState();
+draw();
+</script>
+</body>
+</html>

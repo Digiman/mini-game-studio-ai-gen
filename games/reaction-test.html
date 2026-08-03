@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reaction Time Test</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif; background: #0a0a12; color: #e0e0e0;
+    min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 16px;
+  }
+  .container { max-width: 520px; width: 100%; text-align: center; }
+  h1 {
+    font-size: 1.4rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;
+    background: linear-gradient(90deg, #ff8800, #ffcc00, #66ff88);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 2px;
+  }
+  .subtitle { font-size: 0.7rem; color: #555; margin-bottom: 8px; letter-spacing: 1px; }
+  .game-wrapper { background: #0d0d1a; border-radius: 12px; padding: 6px; margin-bottom: 8px; position: relative; }
+  canvas { display: block; width: 100%; aspect-ratio: 1; border-radius: 8px; background: #08080f; cursor: pointer; touch-action: none; }
+  .hud { display: flex; justify-content: space-between; padding: 4px 4px 0; font-size: 0.8rem; }
+  .hud-label { color: #555; font-size: 0.6rem; text-transform: uppercase; letter-spacing: 1px; }
+  .hud-value { font-size: 1rem; font-weight: 700; }
+  .hud-best .hud-value { color: #ffcc00; }
+  .hud-avg .hud-value { color: #66ff88; }
+  .hud-mode .hud-value { color: #4488ff; font-size: 0.75rem; }
+  .controls { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 6px 0; }
+  .btn {
+    padding: 6px 14px; border: none; border-radius: 8px; font-size: 0.75rem; font-weight: 700; cursor: pointer;
+    text-transform: uppercase; letter-spacing: 0.5px; transition: transform 0.1s, box-shadow 0.2s;
+  }
+  .btn:active { transform: scale(0.95); }
+  .btn-mode { background: #6600ff; color: #fff; }
+  .btn-mode:hover { box-shadow: 0 0 16px rgba(102,0,255,0.4); }
+  .btn-reset { background: #ff8800; color: #0a0a12; }
+  .key-hint { font-size: 0.55rem; color: #444; margin-top: 4px; }
+  .key-hint kbd { background: #14142a; padding: 1px 5px; border-radius: 3px; border: 1px solid #333; font-family: inherit; color: #777; }
+  .overlay {
+    position: absolute; inset: 6px; border-radius: 8px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; background: rgba(8,8,15,0.85);
+    opacity: 0; pointer-events: none; transition: opacity 0.4s; z-index: 10;
+  }
+  .overlay.active { opacity: 1; pointer-events: all; }
+  .overlay h2 { font-size: 1.6rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
+  .overlay .start-title { background: linear-gradient(90deg, #ff8800, #ffcc00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .overlay p { color: #888; font-size: 0.85rem; margin-bottom: 12px; }
+  @media (max-width: 500px) { .btn { font-size: 0.65rem; padding: 5px 10px; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🔮 Reaction Test</h1>
+  <p class="subtitle">Test your reflexes across 3 modes</p>
+  <div class="game-wrapper">
+    <canvas id="canvas" width="500" height="500"></canvas>
+    <div class="overlay active" id="startOverlay">
+      <h2 class="start-title">▶ Click to Start</h2>
+      <p>Click the targets as fast as you can!</p>
+    </div>
+  </div>
+  <div class="hud">
+    <div class="hud-mode"><div class="hud-value" id="modeDisplay">🎯 Aim</div></div>
+    <div class="hud-avg"><div class="hud-label">Avg</div><div class="hud-value" id="avgDisplay">—</div></div>
+    <div class="hud-best"><div class="hud-label">Best</div><div class="hud-value" id="bestDisplay">—</div></div>
+  </div>
+  <div class="controls">
+    <button class="btn btn-mode" id="modeBtn">🔄 Next Mode</button>
+    <button class="btn btn-reset" id="resetBtn">🔄 Reset</button>
+  </div>
+  <div class="key-hint"><kbd>Click</kbd> target · <kbd>M</kbd> switch mode · <kbd>R</kbd> reset</div>
+</div>
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const W=500, H=500;
+const modeDisplay = document.getElementById('modeDisplay');
+const avgDisplay = document.getElementById('avgDisplay');
+const bestDisplay = document.getElementById('bestDisplay');
+const modeBtn = document.getElementById('modeBtn');
+const resetBtn = document.getElementById('resetBtn');
+const startOverlay = document.getElementById('startOverlay');
+
+const MODES = [
+  { id: 'aim', name: '🎯 Aim', desc: 'Click targets that appear around the screen' },
+  { id: 'sequence', name: '🧠 Sequence', desc: 'Remember and repeat the sequence' },
+  { id: 'chaser', name: '🏃 Chaser', desc: 'Follow the moving target' },
+];
+let modeIdx = 0;
+
+// ─── Aim Trainer ──
+let aim = { targets: [], hits: 0, total: 0, times: [], startTime: 0, active: false };
+
+// ─── Sequence ──
+let seq = { sequence: [], playerSeq: [], step: 0, showing: false, showTimer: null, phase: 'idle' };
+
+// ─── Chaser ──
+let chaser = { x: 250, y: 250, dx: 2, dy: 1.5, hits: 0, total: 0, startTime: 0, active: false, radius: 20 };
+
+let bestTimes = JSON.parse(localStorage.getItem('reaction_best') || '{}');
+let gameActive = false;
+let animId = null;
+
+function getBest() { return bestTimes[MODES[modeIdx].id] || null; }
+function setBest(t) {
+  const id = MODES[modeIdx].id;
+  if (!bestTimes[id] || t < bestTimes[id]) { bestTimes[id] = t; localStorage.setItem('reaction_best', JSON.stringify(bestTimes)); }
+  updateDisplays();
+}
+
+function updateDisplays() {
+  const best = getBest();
+  bestDisplay.textContent = best ? best + 'ms' : '—';
+  modeDisplay.textContent = MODES[modeIdx].name;
+}
+
+function startMode() {
+  startOverlay.classList.remove('active');
+  gameActive = true;
+  const mode = MODES[modeIdx].id;
+  if (mode === 'aim') startAim();
+  else if (mode === 'sequence') startSequence();
+  else startChaser();
+}
+
+function startAim() {
+  aim = { targets: [], hits: 0, total: 0, times: [], startTime: 0, active: false };
+  spawnAimTarget();
+  if (animId) cancelAnimationFrame(animId);
+  loopAim();
+}
+
+function spawnAimTarget() {
+  const margin = 40;
+  const r = 20 + Math.random() * 15;
+  aim.targets = [{ x: margin + Math.random() * (W - margin*2), y: margin + Math.random() * (H - margin*2), r, born: performance.now() }];
+  aim.startTime = performance.now();
+  aim.active = true;
+}
+
+function loopAim() {
+  if (!gameActive) return;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle = '#08080f';
+  ctx.fillRect(0,0,W,H);
+
+  // Draw score
+  ctx.fillStyle = '#555'; ctx.font = '14px sans-serif'; ctx.textAlign = 'left';
+  ctx.fillText(`Hits: ${aim.hits}`, 10, 25);
+
+  for (const t of aim.targets) {
+    const pulse = 1 + Math.sin(performance.now() / 200) * 0.05;
+    const r = t.r * pulse;
+    ctx.shadowColor = '#ff4466'; ctx.shadowBlur = 20;
+    ctx.fillStyle = '#ff4466';
+    ctx.beginPath(); ctx.arc(t.x, t.y, r, 0, Math.PI*2); ctx.fill();
+    ctx.shadowBlur = 10;
+    ctx.fillStyle = '#ff8899';
+    ctx.beginPath(); ctx.arc(t.x, t.y, r*0.6, 0, Math.PI*2); ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#fff'; ctx.font = `${r*0.7}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('×', t.x, t.y+1);
+  }
+
+  if (aim.active === false && aim.hits > 0) {
+    ctx.fillStyle = '#888'; ctx.font = '16px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('Click to continue...', W/2, H-20);
+  }
+
+  animId = requestAnimationFrame(loopAim);
+}
+
+function aimClick(mx, my) {
+  if (!gameActive) return;
+  for (const t of aim.targets) {
+    const d = Math.hypot(mx - t.x, my - t.y);
+    if (d < t.r) {
+      const time = performance.now() - t.born;
+      aim.times.push(time);
+      aim.hits++;
+      aim.total++;
+      const avg = aim.times.reduce((a,b)=>a+b,0) / aim.times.length;
+      avgDisplay.textContent = Math.round(avg) + 'ms';
+      setBest(Math.round(time));
+      if (aim.hits >= 10) {
+        gameActive = false;
+        setTimeout(() => { startOverlay.classList.add('active'); startOverlay.querySelector('p').textContent = `Done! Avg: ${Math.round(avg)}ms · Best: ${Math.round(Math.min(...aim.times))}ms`; }, 500);
+        return;
+      }
+      aim.active = false;
+      setTimeout(spawnAimTarget, 400 + Math.random() * 600);
+      return;
+    }
+  }
+  // Miss
+  if (aim.active) { aim.total++; }
+}
+
+function startSequence() {
+  seq = { sequence: [], playerSeq: [], step: 0, showing: false, phase: 'idle' };
+  seq.sequence = [Math.floor(Math.random()*4)];
+  if (animId) cancelAnimationFrame(animId);
+  showSequence();
+}
+
+function showSequence() {
+  seq.showing = true;
+  seq.step = 0;
+  seq.phase = 'showing';
+  if (seq.showTimer) clearTimeout(seq.showTimer);
+  seq.showTimer = setTimeout(() => {
+    seq.phase = 'input';
+    seq.showing = false;
+    seq.playerSeq = [];
+    seq.step = 0;
+  }, Math.max(1000, seq.sequence.length * 500));
+}
+
+const QUADRANTS = [
+  { x: 150, y: 150, label: 'A' },
+  { x: 350, y: 150, label: 'B' },
+  { x: 150, y: 350, label: 'C' },
+  { x: 350, y: 350, label: 'D' },
+];
+
+function sequenceClick(mx, my) {
+  if (!gameActive || seq.phase !== 'input') return;
+  let qIdx = -1;
+  QUADRANTS.forEach((q, i) => {
+    if (Math.abs(mx - q.x) < 80 && Math.abs(my - q.y) < 80) qIdx = i;
+  });
+  if (qIdx < 0) return;
+  const expected = seq.sequence[seq.step];
+  if (qIdx === expected) {
+    seq.step++;
+    seq.playerSeq.push(qIdx);
+    if (seq.step >= seq.sequence.length) {
+      const time = seq.sequence.length * 500;
+      avgDisplay.textContent = time + 'ms';
+      setBest(time);
+      seq.sequence.push(Math.floor(Math.random()*4));
+      setTimeout(showSequence, 500);
+    }
+  } else {
+    gameActive = false;
+    setTimeout(() => {
+      startOverlay.classList.add('active');
+      startOverlay.querySelector('p').textContent = `Wrong! You got ${seq.step}/${seq.sequence.length}`;
+    }, 300);
+  }
+}
+
+function loopSequence() {
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle = '#08080f';
+  ctx.fillRect(0,0,W,H);
+
+  // Quadrants
+  QUADRANTS.forEach((q, i) => {
+    ctx.fillStyle = '#1a1a2e';
+    ctx.beginPath(); ctx.roundRect(q.x-70, q.y-70, 140, 140, 12); ctx.fill();
+    if (seq.phase === 'showing' && seq.sequence[seq.showing ? Math.floor(performance.now()/500) % seq.sequence.length : 0] === i) {
+      ctx.shadowColor = '#66ff88'; ctx.shadowBlur = 20;
+      ctx.fillStyle = '#66ff88';
+      ctx.beginPath(); ctx.roundRect(q.x-70, q.y-70, 140, 140, 12); ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+    ctx.fillStyle = '#888'; ctx.font = '24px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(q.label, q.x, q.y);
+  });
+
+  ctx.fillStyle = '#555'; ctx.font = '14px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText(`Round ${seq.sequence.length}`, W/2, 30);
+
+  if (seq.phase === 'input') {
+    ctx.fillStyle = '#ffcc00'; ctx.font = '12px sans-serif';
+    ctx.fillText(`Tap the quadrant in order (${seq.step+1}/${seq.sequence.length})`, W/2, H-15);
+  }
+
+  animId = requestAnimationFrame(loopSequence);
+}
+
+function startChaser() {
+  chaser = { x: 250, y: 250, dx: 2 + Math.random()*2, dy: 1.5 + Math.random()*2, hits: 0, total: 0, startTime: performance.now(), active: true, radius: 25 };
+  if (animId) cancelAnimationFrame(animId);
+  loopChaser();
+}
+
+function loopChaser() {
+  if (!gameActive) return;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle = '#08080f';
+  ctx.fillRect(0,0,W,H);
+
+  chaser.x += chaser.dx;
+  chaser.y += chaser.dy;
+  if (chaser.x < chaser.radius || chaser.x > W - chaser.radius) chaser.dx = -chaser.dx;
+  if (chaser.y < chaser.radius || chaser.y > H - chaser.radius) chaser.dy = -chaser.dy;
+
+  // Trail
+  ctx.shadowColor = '#4488ff'; ctx.shadowBlur = 25;
+  ctx.fillStyle = '#4488ff';
+  ctx.beginPath(); ctx.arc(chaser.x, chaser.y, chaser.radius, 0, Math.PI*2); ctx.fill();
+  ctx.shadowBlur = 12;
+  ctx.fillStyle = '#88bbff';
+  ctx.beginPath(); ctx.arc(chaser.x, chaser.y, chaser.radius*0.6, 0, Math.PI*2); ctx.fill();
+  ctx.shadowBlur = 0;
+
+  ctx.fillStyle = '#555'; ctx.font = '14px sans-serif'; ctx.textAlign = 'left';
+  ctx.fillText(`Hits: ${chaser.hits}`, 10, 25);
+  ctx.fillText(`Time: ${Math.round((performance.now()-chaser.startTime)/1000)}s`, 10, 45);
+
+  if (chaser.active === false) {
+    ctx.fillStyle = '#888'; ctx.font = '16px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('Click to continue...', W/2, H-20);
+  }
+
+  animId = requestAnimationFrame(loopChaser);
+}
+
+function chaserClick(mx, my) {
+  if (!gameActive) return;
+  const d = Math.hypot(mx - chaser.x, my - chaser.y);
+  chaser.total++;
+  if (d < chaser.radius) {
+    chaser.hits++;
+    const time = performance.now() - chaser.startTime;
+    if (chaser.hits >= 10) {
+      const avg = time / 10;
+      avgDisplay.textContent = Math.round(avg) + 'ms';
+      setBest(Math.round(avg));
+      gameActive = false;
+      setTimeout(() => { startOverlay.classList.add('active'); startOverlay.querySelector('p').textContent = `Done! Avg hit time: ${Math.round(avg)}ms`; }, 500);
+      return;
+    }
+    // Speed up
+    chaser.dx *= 1.1; chaser.dy *= 1.1;
+    chaser.radius = Math.max(10, chaser.radius - 1);
+    chaser.active = false;
+    setTimeout(() => {
+      chaser.active = true;
+      chaser.startTime = performance.now();
+    }, 500);
+  }
+}
+
+// ─── Canvas click ──
+canvas.addEventListener('click', (e) => {
+  if (startOverlay.classList.contains('active')) { startMode(); return; }
+  if (!gameActive) { startMode(); return; }
+  const rect = canvas.getBoundingClientRect();
+  const scale = W / rect.width;
+  const mx = (e.clientX - rect.left) * scale;
+  const my = (e.clientY - rect.top) * scale;
+  const mode = MODES[modeIdx].id;
+  if (mode === 'aim') aimClick(mx, my);
+  else if (mode === 'sequence') sequenceClick(mx, my);
+  else chaserClick(mx, my);
+});
+
+// Touch
+canvas.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  const t = e.touches[0];
+  const rect = canvas.getBoundingClientRect();
+  const scale = W / rect.width;
+  const mx = (t.clientX - rect.left) * scale;
+  const my = (t.clientY - rect.top) * scale;
+  if (startOverlay.classList.contains('active')) { startMode(); return; }
+  if (!gameActive) { startMode(); return; }
+  const mode = MODES[modeIdx].id;
+  if (mode === 'aim') aimClick(mx, my);
+  else if (mode === 'sequence') sequenceClick(mx, my);
+  else chaserClick(mx, my);
+}, {passive: false});
+
+// ─── Controls ──
+modeBtn.addEventListener('click', () => {
+  modeIdx = (modeIdx + 1) % MODES.length;
+  gameActive = false;
+  if (animId) cancelAnimationFrame(animId);
+  updateDisplays();
+  avgDisplay.textContent = '—';
+  startOverlay.classList.add('active');
+  startOverlay.querySelector('p').textContent = MODES[modeIdx].desc;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle = '#08080f'; ctx.fillRect(0,0,W,H);
+});
+
+resetBtn.addEventListener('click', () => {
+  gameActive = false;
+  if (animId) cancelAnimationFrame(animId);
+  avgDisplay.textContent = '—';
+  startOverlay.classList.add('active');
+  startOverlay.querySelector('p').textContent = MODES[modeIdx].desc;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle = '#08080f'; ctx.fillRect(0,0,W,H);
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'm' || e.key === 'M') modeBtn.click();
+  if (e.key === 'r' || e.key === 'R') resetBtn.click();
+});
+
+// ─── Init ──
+updateDisplays();
+startOverlay.querySelector('p').textContent = MODES[0].desc;
+ctx.fillStyle = '#08080f'; ctx.fillRect(0,0,W,H);
+</script>
+</body>
+</html>

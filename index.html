@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mini Game Studio — Catalog</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ── CSS Variables (Dark = default) ── */
+  :root {
+    --bg: #08080e;
+    --text: #e0e0e0;
+    --header-bg: linear-gradient(180deg, #0d0d1a 0%, #08080e 100%);
+    --header-border: #1a1a2e;
+    --header-sub: #666;
+    --header-count: #888;
+    --card-bg: #0d0d1a;
+    --card-border: #1a1a2e;
+    --card-shadow: rgba(0,0,0,0.4);
+    --card-hover-border: #333;
+    --card-desc: #999;
+    --tag-bg: #1a1a2e;
+    --tag-text: #888;
+    --btn-docs-bg: #1a1a2e;
+    --btn-docs-text: #aaa;
+    --btn-docs-hover-bg: #222;
+    --btn-docs-hover-text: #eee;
+    --footer-text: #444;
+    --footer-border: #1a1a2e;
+    --footer-link: #666;
+    --footer-link-hover: #aaa;
+    --toggle-bg: #1a1a2e;
+    --toggle-border: #333;
+    --toggle-text: #888;
+    --toggle-hover-bg: #2a2a3e;
+    --card-img-border: #1a1a2e;
+    --filter-bg: #0d0d1a;
+    --filter-border: #1a1a2e;
+    --filter-btn-bg: transparent;
+    --filter-btn-text: #666;
+    --filter-btn-border: #333;
+    --filter-btn-hover-bg: #1a1a2e;
+    --filter-btn-hover-text: #ccc;
+    --filter-btn-active-bg: #1a0e00;
+    --filter-btn-active-text: #ff8800;
+    --filter-btn-active-border: #ff8800;
+    --filter-count-text: #555;
+  }
+
+  body.light {
+    --bg: #f5f5f0;
+    --text: #1a1a1a;
+    --header-bg: linear-gradient(180deg, #ffffff 0%, #f5f5f0 100%);
+    --header-border: #d8d8d0;
+    --header-sub: #666666;
+    --header-count: #888888;
+    --card-bg: #ffffff;
+    --card-border: #d8d8d0;
+    --card-shadow: rgba(0,0,0,0.08);
+    --card-hover-border: #b0b0a8;
+    --card-desc: #444444;
+    --tag-bg: #e8e8e4;
+    --tag-text: #444444;
+    --btn-docs-bg: #e8e8e4;
+    --btn-docs-text: #444444;
+    --btn-docs-hover-bg: #d8d8d0;
+    --btn-docs-hover-text: #1a1a1a;
+    --footer-text: #888888;
+    --footer-border: #d8d8d0;
+    --footer-link: #666666;
+    --footer-link-hover: #333333;
+    --toggle-bg: #e8e8e4;
+    --toggle-border: #d0d0c8;
+    --toggle-text: #444444;
+    --toggle-hover-bg: #d8d8d0;
+    --card-img-border: #e8e8e4;
+    --filter-bg: #f5f5f0;
+    --filter-border: #d8d8d0;
+    --filter-btn-bg: transparent;
+    --filter-btn-text: #666666;
+    --filter-btn-border: #c8c8c0;
+    --filter-btn-hover-bg: #e8e8e4;
+    --filter-btn-hover-text: #222222;
+    --filter-btn-active-bg: #fff0e0;
+    --filter-btn-active-text: #cc5500;
+    --filter-btn-active-border: #ff8800;
+    --filter-count-text: #999999;
+  }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  .header {
+    text-align: center; padding: 32px 20px 16px;
+    background: var(--header-bg);
+    border-bottom: 1px solid var(--header-border);
+    position: relative;
+    transition: border-color 0.3s;
+  }
+  .header h1 {
+    font-size: 2.2rem; font-weight: 900; letter-spacing: 3px; text-transform: uppercase;
+    background: linear-gradient(135deg, #ff6600, #ff00cc, #4488ff, #66ff88, #ffcc00);
+    background-size: 300% auto;
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shimmer 6s ease-in-out infinite; margin-bottom: 6px;
+  }
+  @keyframes shimmer {
+    0% { background-position: 0% center; }
+    50% { background-position: 100% center; }
+    100% { background-position: 0% center; }
+  }
+  .header p { color: var(--header-sub); font-size: 1rem; letter-spacing: 1px; transition: color 0.3s; }
+  .header .count { color: var(--header-count); font-size: 0.8rem; margin-top: 4px; transition: color 0.3s; }
+  .header .count span { color: #ffcc00; font-weight: 700; }
+
+  /* ── Theme toggle ── */
+  .theme-toggle {
+    position: absolute; top: 16px; right: 20px;
+    width: 40px; height: 40px; border-radius: 50%;
+    border: 1px solid var(--toggle-border);
+    background: var(--toggle-bg);
+    color: var(--toggle-text);
+    font-size: 1.2rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.3s, color 0.3s, border-color 0.3s, transform 0.2s;
+  }
+  .theme-toggle:hover { background: var(--toggle-hover-bg); transform: scale(1.1); }
+  .theme-toggle:active { transform: scale(0.9); }
+
+  /* ── Filter bar ── */
+  .filter-bar {
+    display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;
+    padding: 12px 20px;
+    background: var(--filter-bg);
+    border-bottom: 1px solid var(--filter-border);
+    position: sticky; top: 0; z-index: 20;
+    transition: background 0.3s, border-color 0.3s;
+  }
+  .filter-btn {
+    padding: 5px 14px; border: 1px solid var(--filter-btn-border);
+    border-radius: 20px; font-size: 0.7rem; font-weight: 600;
+    cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;
+    background: var(--filter-btn-bg); color: var(--filter-btn-text);
+    transition: all 0.2s;
+  }
+  .filter-btn:hover { background: var(--filter-btn-hover-bg); color: var(--filter-btn-hover-text); }
+  .filter-btn.active {
+    background: var(--filter-btn-active-bg);
+    color: var(--filter-btn-active-text);
+    border-color: var(--filter-btn-active-border);
+  }
+  .filter-count {
+    font-size: 0.65rem; color: var(--filter-count-text);
+    display: inline-flex; align-items: center; margin-left: 4px;
+    transition: color 0.3s;
+  }
+
+  .grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px; padding: 24px 20px; max-width: 1200px; margin: 0 auto;
+  }
+
+  .card {
+    background: var(--card-bg); border-radius: 14px; overflow: hidden;
+    border: 1px solid var(--card-border); display: flex; flex-direction: column;
+    transition: transform 0.25s, box-shadow 0.25s, border-color 0.3s, background 0.3s, opacity 0.3s, transform 0.3s;
+  }
+  .card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px var(--card-shadow); border-color: var(--card-hover-border); }
+  .card.hidden { display: none; }
+  .card-image {
+    width: 100%; aspect-ratio: 1; object-fit: cover; display: block;
+    background: var(--card-bg); border-bottom: 1px solid var(--card-img-border);
+    transition: border-color 0.3s;
+  }
+  .card-body { padding: 14px 16px 16px; flex: 1; display: flex; flex-direction: column; }
+  .card-title { font-size: 1rem; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .card-desc { font-size: 0.78rem; color: var(--card-desc); line-height: 1.5; margin-bottom: 10px; flex: 1; transition: color 0.3s; }
+  .card-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px; }
+  .card-tag {
+    font-size: 0.55rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+    padding: 2px 8px; border-radius: 20px; background: var(--tag-bg); color: var(--tag-text);
+    transition: background 0.3s, color 0.3s;
+  }
+  .card-tag.orange { background: #3a1a00; color: #ff8800; }
+  .card-tag.cyan   { background: #002a3a; color: #00ffff; }
+  .card-tag.red    { background: #3a0000; color: #ff4466; }
+  .card-tag.green  { background: #002a10; color: #66ff88; }
+  .card-tag.purple { background: #1a003a; color: #aa66ff; }
+  .card-tag.pink   { background: #3a002a; color: #ff66cc; }
+  .card-tag.yellow { background: #2a1a00; color: #ffcc00; }
+  body.light .card-tag.orange { background: #fef0e0; color: #b85000; }
+  body.light .card-tag.cyan   { background: #e0f0f5; color: #006680; }
+  body.light .card-tag.red    { background: #fde8e8; color: #b01828; }
+  body.light .card-tag.green  { background: #e4f0e8; color: #1a6a3a; }
+  body.light .card-tag.purple { background: #f0e8f5; color: #6a3090; }
+  body.light .card-tag.pink   { background: #fde8f0; color: #b03060; }
+  body.light .card-tag.yellow { background: #fef8e0; color: #9a7000; }
+  .card-actions { display: flex; gap: 6px; }
+  .card-btn {
+    padding: 6px 14px; border: none; border-radius: 8px; font-size: 0.72rem; font-weight: 700;
+    cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; text-decoration: none;
+    display: inline-flex; align-items: center; gap: 4px; transition: transform 0.1s, box-shadow 0.2s, background 0.3s, color 0.3s;
+  }
+  .card-btn:active { transform: scale(0.95); }
+  .card-btn-play { background: #66ff88; color: #0a0a12; }
+  .card-btn-play:hover { box-shadow: 0 0 16px rgba(102,255,136,0.3); }
+  .card-btn-docs { background: var(--btn-docs-bg); color: var(--btn-docs-text); }
+  .card-btn-docs:hover { background: var(--btn-docs-hover-bg); color: var(--btn-docs-hover-text); }
+  .footer { text-align: center; padding: 24px; color: var(--footer-text); font-size: 0.75rem; border-top: 1px solid var(--footer-border); transition: color 0.3s, border-color 0.3s; }
+  .footer a { color: var(--footer-link); text-decoration: none; transition: color 0.3s; }
+  .footer a:hover { color: var(--footer-link-hover); }
+  @media (max-width: 500px) {
+    .header h1 { font-size: 1.5rem; }
+    .grid { grid-template-columns: 1fr; padding: 16px; gap: 16px; }
+    .theme-toggle { top: 10px; right: 12px; width: 34px; height: 34px; font-size: 1rem; }
+    .filter-bar { padding: 8px 12px; gap: 4px; }
+    .filter-btn { font-size: 0.6rem; padding: 4px 10px; }
+  }
+</style>
+</head>
+<body>
+<div class="header">
+  <button class="theme-toggle" id="themeToggle" title="Toggle theme">🌙</button>
+  <h1>🎮 Mini Game Studio</h1>
+  <p>A collection of single-file HTML/JS games &amp; tools</p>
+  <div class="count"><span id="totalCount">14</span> projects · no dependencies · no build</div>
+</div>
+
+<div class="filter-bar" id="filterBar">
+  <button class="filter-btn active" data-filter="all">All <span class="filter-count" id="countAll">14</span></button>
+  <button class="filter-btn" data-filter="arcade" style="border-color:#00ffff55;color:#00ffff;">Arcade <span class="filter-count" id="countArcade">0</span></button>
+  <button class="filter-btn" data-filter="puzzle" style="border-color:#ff880055;color:#ff8800;">Puzzle <span class="filter-count" id="countPuzzle">0</span></button>
+  <button class="filter-btn" data-filter="procedural" style="border-color:#ff880055;color:#ff8800;">Procedural <span class="filter-count" id="countProcedural">0</span></button>
+  <button class="filter-btn" data-filter="physics" style="border-color:#66ff8855;color:#66ff88;">Physics <span class="filter-count" id="countPhysics">0</span></button>
+  <button class="filter-btn" data-filter="visual" style="border-color:#aa66ff55;color:#aa66ff;">Visual <span class="filter-count" id="countVisual">0</span></button>
+  <button class="filter-btn" data-filter="music" style="border-color:#ff66cc55;color:#ff66cc;">Music <span class="filter-count" id="countMusic">0</span></button>
+  <button class="filter-btn" data-filter="simulation" style="border-color:#aa66ff55;color:#aa66ff;">Simulation <span class="filter-count" id="countSimulation">0</span></button>
+  <button class="filter-btn" data-filter="strategy" style="border-color:#ffcc0055;color:#ffcc00;">Strategy <span class="filter-count" id="countStrategy">0</span></button>
+  <button class="filter-btn" data-filter="creative" style="border-color:#ff66cc55;color:#ff66cc;">Creative <span class="filter-count" id="countCreative">0</span></button>
+  <button class="filter-btn" data-filter="reflex" style="border-color:#ff880055;color:#ff8800;">Reflex <span class="filter-count" id="countReflex">0</span></button>
+</div>
+
+<div class="grid">
+
+  <!-- ─── Landscape Generator ─── -->
+  <div class="card" data-category="procedural">
+    <img class="card-image" src="screenshots/landscape-generator.png" alt="" loading="lazy">
+    <div class="card-body">
+      <div class="card-title" style="color:#ff8800;">🏔️ Landscape Generator</div>
+      <div class="card-desc">Procedural pixel-art terrain with layered noise and a seed system for sharing.</div>
+      <div class="card-tags"><span class="card-tag orange">Procedural</span><span class="card-tag orange">Noise</span></div>
+      <div class="card-actions">
+        <a href="games/landscape-generator.html" class="card-btn card-btn-play">▶ Play</a>
+        <a href="docs-viewer.html?game=landscape-generator" class="card-btn card-btn-docs">📄 Docs</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Neon Snake ─── -->
+  <div class="card" data-category="arcade">
+    <img class="card-image" src="screenshots/snake.png" alt="" loading="lazy">
+    <div class="card-body">
+      <div class="card-title" style="color:#00ffff;">🐍 Neon Snake</div>
+      <div class="card-desc">Classic snake with neon visuals, 5 power-ups, and progressive speed ramping.</div>
+      <div class="card-tags"><span class="card-tag cyan">Arcade</span><span class="card-tag cyan">Power-ups</span></div>
+      <div class="card-actions">
+        <a href="games/snake.html" class="card-btn card-btn-play">▶ Play</a>
+        <a href="docs-viewer.html?game=snake-game" class="card-btn card-btn-docs">📄 Docs</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Asteroid Shooter ─── -->
+  <div class="card" data-category="arcade">
+    <img class="card-image" src="screenshots/asteroids.png" alt="" loading="lazy">
+    <div class="card-body">
+      <div class="card-title" style="color:#ff4466;">☄️ Asteroid Shooter</div>
+      <div class="card-desc">Arcade space shooter where asteroids break apart. Waves, lives, and explosions.</div>
+      <div class="card-tags"><span class="card-tag red">Arcade</span><span class="card-tag red">Shooter</span></div>
+      <div class="card-actions">
+        <a href="games/asteroids.html" class="card-btn card-btn-play">▶ Play</a>
+        <a href="docs-viewer.html?game=asteroid-shooter" class="card-btn card-btn-docs">📄 Docs</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Particle Sandbox ─── -->
+  <div class="card" data-category="physics">
+    <img class="card-image" src="screenshots/particle-sandbox.png" alt="" loading="lazy">
+    <div class="card-body">
+      <div class="card-title" style="color:#66ff88;">✦ Particle Sandbox</div>
+      <div class="card-desc">Physics playground with gravity, wind, collisions, and bouncing particles.</div>
+      <div class="card-tags"><span class="card-tag green">Physics</span><span class="card-tag green">Sandbox</span></div>
+      <div class="card-actions">
+        <a href="games/particle-sandbox.html" class="card-btn card-btn-play">▶ Play</a>
+        <a href="docs-viewer.html?game=particle-sandbox" class="card-btn card-btn-docs">📄 Docs</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Mandelbrot Explorer ─── -->
+  <div class="card" data-category="visual">
+    <img class="card-image" src="screenshots/mandelbrot.png" alt="" loading="lazy">
+    <div class="card-body">
+      <div class="card-title" style="color:#aa66ff;">🌀 Mandelbrot Explorer</div>
+      <div class="card-desc">Infinite zoom fractal viewer with 5 psychedelic color palettes.</div>
+      <div class="card-tags"><span class="card-tag purple">Fractal</span><span class="card-tag purple">Visual</span></div>
+      <div class="card-actions">
+        <a href="games/mandelbrot.html" class="card-btn card-btn-play">▶ Play</a>
+        <a href="docs-viewer.html?game=mandelbrot-explorer" class="card-btn card-btn-docs">📄 Docs</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Piano / Sequencer ─── -->
+  <div class="card" data-category="music">
+    <img class="card-image" src="screenshots/piano-sequencer.png" alt="" loading="lazy">
+    <div class="card-body">
+      <div class="card-title" style="color:#ff66cc;">🎹 Mini Piano / Sequencer</div>
+      <div class="card-desc">Playable piano with step sequencer, 4 waveforms, visualizer, and WAV export.</div>
+      <div class="card-tags"><span class="card-tag pink">Music</span><span class="card-tag pink">Audio</span></div>
+      <div class="card-actions">
+        <a href="games/piano-sequencer.html" class="card-btn card-btn-play">▶ Play</a>
+        <a href="docs-viewer.html?game=piano-sequencer" class="card-btn card-btn-docs">📄 Docs</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Memory Match ─── -->
+  <div class="card" data-category="puzzle">
+    <img class="card-image" src="screenshots/memory-match.png" alt="" loading="lazy">
+    <div class="card-body">
+      <div class="card-title" style="color:#ff8800;">🃏 Memory Match</div>
+      <div class="card-desc">Flip cards to find matching pairs. Timer, move counter, and configurable grid sizes.</div>
+      <div class="card-tags"><span class="card-tag orange">Puzzle</span><span class="card-tag orange">Memory</span></div>
+      <div class="card-actions">
+        <a href="games/memory-match.html" class="card-btn card-btn-play">▶ Play</a>
+        <a href="docs-viewer.html?game=memory-match" class="card-btn card-btn-docs">📄 Docs</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Minesweeper ─── -->
+  <div class="card" data-category="puzzle">
+    <img class="card-image" src="screenshots/minesweeper.png" alt="" loading="lazy">
+    <div class="card-body">
+      <div class="card-title" style="color:#ff4466;">💣 Minesweeper</div>
+      <div class="card-desc">Classic minesweeper with flood-fill, flagging, and 3 difficulty levels.</div>
+      <div class="card-tags"><span class="card-tag red">Puzzle</span><span class="card-tag red">Classic</span></div>
+      <div class="card-actions">
+        <a href="games/minesweeper.html" class="card-btn card-btn-play">▶ Play</a>
+        <a href="docs-viewer.html?game=minesweeper" class="card-btn card-btn-docs">📄 Docs</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Sokoban ─── -->
+  <div class="card" data-category="puzzle">
+    <img class="card-image" src="screenshots/sokoban.png" alt="" loading="lazy">
+    <div class="card-body">
+      <div class="card-title" style="color:#66ff88;">🧩 Sokoban</div>
+      <div class="card-desc">Push boxes to goals across 5 levels. Undo, reset, and keyboard controls.</div>
+      <div class="card-tags"><span class="card-tag green">Puzzle</span><span class="card-tag green">Logic</span></div>
+      <div class="card-actions">
+        <a href="games/sokoban.html" class="card-btn card-btn-play">▶ Play</a>
+        <a href="docs-viewer.html?game=sokoban" class="card-btn card-btn-docs">📄 Docs</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Pong / Breakout ─── -->
+  <div class="card" data-category="arcade">
+    <img class="card-image" src="screenshots/pong-breakout.png" alt="" loading="lazy">
+    <div class="card-body">
+      <div class="card-title" style="color:#00ffff;">🏓 Pong / Breakout</div>
+      <div class="card-desc">Two classics in one. Break bricks or play Pong against an AI opponent.</div>
+      <div class="card-tags"><span class="card-tag cyan">Arcade</span><span class="card-tag cyan">Classic</span></div>
+      <div class="card-actions">
+        <a href="games/pong-breakout.html" class="card-btn card-btn-play">▶ Play</a>
+        <a href="docs-viewer.html?game=pong-breakout" class="card-btn card-btn-docs">📄 Docs</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Cellular Automata ─── -->
+  <div class="card" data-category="simulation">
+    <img class="card-image" src="screenshots/cellular-automata.png" alt="" loading="lazy">
+    <div class="card-body">
+      <div class="card-title" style="color:#4488ff;">🌊 Cellular Automata</div>
+      <div class="card-desc">Game of Life, Sand, and Seeds. Paint cells and watch them evolve.</div>
+      <div class="card-tags"><span class="card-tag purple">Simulation</span><span class="card-tag purple">Algorithm</span></div>
+      <div class="card-actions">
+        <a href="games/cellular-automata.html" class="card-btn card-btn-play">▶ Play</a>
+        <a href="docs-viewer.html?game=cellular-automata" class="card-btn card-btn-docs">📄 Docs</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Connect Four ─── -->
+  <div class="card" data-category="strategy">
+    <img class="card-image" src="screenshots/connect-four.png" alt="" loading="lazy">
+    <div class="card-body">
+      <div class="card-title" style="color:#ffcc00;">⚫ Connect Four</div>
+      <div class="card-desc">Drop four in a row. Play against Minimax AI or 2-player local.</div>
+      <div class="card-tags"><span class="card-tag yellow">Strategy</span><span class="card-tag yellow">AI</span></div>
+      <div class="card-actions">
+        <a href="games/connect-four.html" class="card-btn card-btn-play">▶ Play</a>
+        <a href="docs-viewer.html?game=connect-four" class="card-btn card-btn-docs">📄 Docs</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Pixel Art Editor ─── -->
+  <div class="card" data-category="creative">
+    <img class="card-image" src="screenshots/pixel-art-editor.png" alt="" loading="lazy">
+    <div class="card-body">
+      <div class="card-title" style="color:#ff66cc;">🎨 Pixel Art Editor</div>
+      <div class="card-desc">Draw pixel art with undo/redo, flood fill, color palette, and PNG export.</div>
+      <div class="card-tags"><span class="card-tag pink">Creative</span><span class="card-tag pink">Tool</span></div>
+      <div class="card-actions">
+        <a href="games/pixel-art-editor.html" class="card-btn card-btn-play">▶ Play</a>
+        <a href="docs-viewer.html?game=pixel-art-editor" class="card-btn card-btn-docs">📄 Docs</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Reaction Test ─── -->
+  <div class="card" data-category="reflex">
+    <img class="card-image" src="screenshots/reaction-test.png" alt="" loading="lazy">
+    <div class="card-body">
+      <div class="card-title" style="color:#ff8800;">🔮 Reaction Test</div>
+      <div class="card-desc">3 modes: Aim Trainer, Sequence Recall, and Moving Target. Track your best times.</div>
+      <div class="card-tags"><span class="card-tag orange">Reflex</span><span class="card-tag orange">Timing</span></div>
+      <div class="card-actions">
+        <a href="games/reaction-test.html" class="card-btn card-btn-play">▶ Play</a>
+        <a href="docs-viewer.html?game=reaction-test" class="card-btn card-btn-docs">📄 Docs</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  <a href="https://github.com/yourusername/mini-game-studio" target="_blank" rel="noopener">Mini Game Studio</a>
+  · 14 projects · vanilla JS &amp; Canvas 2D
+  · <a href="README.md">README</a>
+</div>
+
+<script>
+  // ── Theme toggle ──
+  const toggle = document.getElementById('themeToggle');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  let theme = localStorage.getItem('theme') || (prefersDark ? 'dark' : 'light');
+
+  function applyTheme(t) {
+    if (t === 'light') {
+      document.body.classList.add('light');
+      toggle.textContent = '☀️';
+    } else {
+      document.body.classList.remove('light');
+      toggle.textContent = '🌙';
+    }
+    localStorage.setItem('theme', t);
+  }
+  applyTheme(theme);
+  toggle.addEventListener('click', () => { theme = theme === 'dark' ? 'light' : 'dark'; applyTheme(theme); });
+
+  // ── Category filter ──
+  const cards = document.querySelectorAll('.card');
+  const filterBtns = document.querySelectorAll('.filter-btn');
+  const totalSpan = document.getElementById('totalCount');
+
+  // Count cards per category
+  function updateCounts() {
+    const counts = {};
+    cards.forEach(card => {
+      const cat = card.dataset.category;
+      counts[cat] = (counts[cat] || 0) + 1;
+    });
+    filterBtns.forEach(btn => {
+      const f = btn.dataset.filter;
+      const countEl = document.getElementById('count' + f.charAt(0).toUpperCase() + f.slice(1));
+      if (countEl) countEl.textContent = f === 'all' ? cards.length : (counts[f] || 0);
+    });
+    totalSpan.textContent = cards.length;
+  }
+
+  function filterCards(category) {
+    filterBtns.forEach(b => b.classList.remove('active'));
+    const activeBtn = document.querySelector(`.filter-btn[data-filter="${category}"]`);
+    if (activeBtn) activeBtn.classList.add('active');
+
+    cards.forEach(card => {
+      if (category === 'all' || card.dataset.category === category) {
+        card.classList.remove('hidden');
+      } else {
+        card.classList.add('hidden');
+      }
+    });
+  }
+
+  filterBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      filterCards(btn.dataset.filter);
+    });
+  });
+
+  updateCounts();
+</script>
+</body>
+</html>

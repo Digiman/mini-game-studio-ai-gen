@@ -1,0 +1,7 @@
+# ZCode agent session data
+.zcode/
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini

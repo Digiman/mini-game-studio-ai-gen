@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cellular Automata</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif; background: #0a0a12; color: #e0e0e0;
+    min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 16px;
+  }
+  .container { max-width: 560px; width: 100%; text-align: center; }
+  h1 {
+    font-size: 1.4rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;
+    background: linear-gradient(90deg, #4488ff, #66ff88, #ffcc00);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 2px;
+  }
+  .subtitle { font-size: 0.7rem; color: #555; margin-bottom: 8px; letter-spacing: 1px; }
+  .game-wrapper { background: #0d0d1a; border-radius: 12px; padding: 6px; margin-bottom: 8px; }
+  canvas { display: block; width: 100%; aspect-ratio: 1; border-radius: 8px; background: #08080f; cursor: crosshair; touch-action: none; }
+  .hud { display: flex; justify-content: space-between; padding: 4px 4px 0; font-size: 0.8rem; }
+  .hud-label { color: #555; font-size: 0.6rem; text-transform: uppercase; letter-spacing: 1px; }
+  .hud-value { font-size: 1rem; font-weight: 700; }
+  .hud-gen .hud-value { color: #ffcc00; }
+  .hud-pop .hud-value { color: #66ff88; }
+  .controls { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 6px 0; }
+  .btn {
+    padding: 6px 14px; border: none; border-radius: 8px; font-size: 0.75rem; font-weight: 700; cursor: pointer;
+    text-transform: uppercase; letter-spacing: 0.5px; transition: transform 0.1s, box-shadow 0.2s;
+  }
+  .btn:active { transform: scale(0.95); }
+  .btn-play { background: #66ff88; color: #0a0a12; }
+  .btn-play:hover { box-shadow: 0 0 16px rgba(102,255,136,0.4); }
+  .btn-play.playing { background: #ff3344; }
+  .btn-step { background: #4488ff; color: #fff; }
+  .btn-step:hover { box-shadow: 0 0 16px rgba(68,136,255,0.4); }
+  .btn-clear { background: #444; color: #eee; }
+  .btn-mode { background: #6600ff; color: #fff; }
+  .btn-mode:hover { box-shadow: 0 0 16px rgba(102,0,255,0.4); }
+  .btn-preset { background: #ff8800; color: #0a0a12; }
+  .btn-preset:hover { box-shadow: 0 0 16px rgba(255,136,0,0.4); }
+  .controls label { font-size: 0.7rem; color: #888; display: inline-flex; align-items: center; gap: 4px; }
+  input[type="range"] { width: 56px; accent-color: #4488ff; }
+  .key-hint { font-size: 0.55rem; color: #444; margin-top: 4px; }
+  .key-hint kbd { background: #14142a; padding: 1px 5px; border-radius: 3px; border: 1px solid #333; font-family: inherit; color: #777; }
+  @media (max-width: 500px) { .btn { font-size: 0.65rem; padding: 5px 10px; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🌊 Cellular Automata</h1>
+  <p class="subtitle">Game of Life · Sand · Paint · Simulate</p>
+  <div class="game-wrapper">
+    <canvas id="canvas" width="500" height="500"></canvas>
+  </div>
+  <div class="hud">
+    <div class="hud-gen"><div class="hud-label">Generation</div><div class="hud-value" id="genDisplay">0</div></div>
+    <div class="hud-pop"><div class="hud-label">Population</div><div class="hud-value" id="popDisplay">0</div></div>
+  </div>
+  <div class="controls">
+    <button class="btn btn-play" id="playBtn">▶ Play</button>
+    <button class="btn btn-step" id="stepBtn">⏭ Step</button>
+    <button class="btn btn-clear" id="clearBtn">✕ Clear</button>
+    <button class="btn btn-mode" id="modeBtn">🌱 Life</button>
+    <button class="btn btn-preset" id="presetBtn">🎲 Random</button>
+  </div>
+  <div class="controls">
+    <label>Brush <input type="range" id="brushSlider" min="1" max="6" value="2"><span id="brushValue">2</span></label>
+    <label>Speed <input type="range" id="speedSlider" min="1" max="30" value="10"></label>
+  </div>
+  <div class="key-hint"><kbd>Click</kbd> <kbd>Drag</kbd> paint · <kbd>Space</kbd> play · <kbd>1</kbd> Life · <kbd>2</kbd> Sand · <kbd>3</kbd> Seeds</div>
+</div>
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const W=500, H=500;
+const genDisplay = document.getElementById('genDisplay');
+const popDisplay = document.getElementById('popDisplay');
+const playBtn = document.getElementById('playBtn');
+const stepBtn = document.getElementById('stepBtn');
+const clearBtn = document.getElementById('clearBtn');
+const modeBtn = document.getElementById('modeBtn');
+const presetBtn = document.getElementById('presetBtn');
+const brushSlider = document.getElementById('brushSlider');
+const brushValue = document.getElementById('brushValue');
+const speedSlider = document.getElementById('speedSlider');
+
+const GRID_W = 100, GRID_H = 100;
+const CELL = 5;
+let grid = Array.from({length: GRID_H}, () => Array(GRID_W).fill(0));
+let gen = 0, playing = false, mode = 'life', mouseDown = false;
+let timerId = null;
+
+function countNeighbors(g, r, c) {
+  let n = 0;
+  for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+    if (dr === 0 && dc === 0) continue;
+    const nr = (r + dr + GRID_H) % GRID_H, nc = (c + dc + GRID_W) % GRID_W;
+    if (g[nr][nc] === 1) n++;
+  }
+  return n;
+}
+
+function stepLife() {
+  const next = Array.from({length: GRID_H}, () => Array(GRID_W).fill(0));
+  for (let r = 0; r < GRID_H; r++) for (let c = 0; c < GRID_W; c++) {
+    const n = countNeighbors(grid, r, c);
+    if (grid[r][c] === 1) next[r][c] = (n === 2 || n === 3) ? 1 : 0;
+    else next[r][c] = (n === 3) ? 1 : 0;
+  }
+  grid = next; gen++;
+}
+
+function stepSand() {
+  const next = grid.map(r => [...r]);
+  for (let r = GRID_H - 1; r >= 0; r--) for (let c = 0; c < GRID_W; c++) {
+    if (grid[r][c] === 1) {
+      if (r + 1 < GRID_H && grid[r+1][c] === 0) { next[r][c] = 0; next[r+1][c] = 1; }
+      else if (r + 1 < GRID_H && c - 1 >= 0 && grid[r+1][c-1] === 0) { next[r][c] = 0; next[r+1][c-1] = 1; }
+      else if (r + 1 < GRID_H && c + 1 < GRID_W && grid[r+1][c+1] === 0) { next[r][c] = 0; next[r+1][c+1] = 1; }
+    }
+  }
+  grid = next; gen++;
+}
+
+function stepSeeds() {
+  const next = Array.from({length: GRID_H}, () => Array(GRID_W).fill(0));
+  for (let r = 0; r < GRID_H; r++) for (let c = 0; c < GRID_W; c++) {
+    const n = countNeighbors(grid, r, c);
+    if (grid[r][c] === 1) next[r][c] = (n === 1 || n === 2) ? 1 : 0;
+    else next[r][c] = (n === 2) ? 1 : 0;
+  }
+  grid = next; gen++;
+}
+
+function step() {
+  if (mode === 'life') stepLife();
+  else if (mode === 'sand') stepSand();
+  else stepSeeds();
+  draw();
+  updateHUD();
+}
+
+function updateHUD() {
+  genDisplay.textContent = gen;
+  let pop = 0;
+  for (let r = 0; r < GRID_H; r++) for (let c = 0; c < GRID_W; c++) if (grid[r][c]) pop++;
+  popDisplay.textContent = pop;
+}
+
+function draw() {
+  ctx.fillStyle = '#08080f';
+  ctx.fillRect(0,0,W,H);
+  const imgData = ctx.createImageData(W, H);
+  const data = imgData.data;
+  for (let r = 0; r < GRID_H; r++) for (let c = 0; c < GRID_W; c++) {
+    if (grid[r][c] === 1) {
+      const color = mode === 'life' ? [100,220,80] : mode === 'sand' ? [220,180,80] : [80,180,220];
+      for (let dy = 0; dy < CELL; dy++) for (let dx = 0; dx < CELL; dx++) {
+        const px = c * CELL + dx, py = r * CELL + dy;
+        const idx = (py * W + px) * 4;
+        data[idx] = color[0]; data[idx+1] = color[1]; data[idx+2] = color[2]; data[idx+3] = 255;
+      }
+    }
+  }
+  ctx.putImageData(imgData, 0, 0);
+}
+
+function paintCell(clientX, clientY) {
+  const rect = canvas.getBoundingClientRect();
+  const scale = W / rect.width;
+  const mx = (clientX - rect.left) * scale;
+  const my = (clientY - rect.top) * scale;
+  const gc = Math.floor(mx / CELL), gr = Math.floor(my / CELL);
+  const brush = parseInt(brushSlider.value, 10);
+  for (let dr = -brush+1; dr < brush; dr++) for (let dc = -brush+1; dc < brush; dc++) {
+    const r = gr + dr, c = gc + dc;
+    if (r >= 0 && r < GRID_H && c >= 0 && c < GRID_W) grid[r][c] = 1;
+  }
+  draw(); updateHUD();
+}
+
+canvas.addEventListener('mousedown', (e) => { mouseDown = true; paintCell(e.clientX, e.clientY); });
+canvas.addEventListener('mousemove', (e) => { if (mouseDown) paintCell(e.clientX, e.clientY); });
+canvas.addEventListener('mouseup', () => mouseDown = false);
+canvas.addEventListener('mouseleave', () => mouseDown = false);
+canvas.addEventListener('touchstart', (e) => { e.preventDefault(); const t=e.touches[0]; paintCell(t.clientX, t.clientY); }, {passive:false});
+canvas.addEventListener('touchmove', (e) => { e.preventDefault(); if (e.touches.length) { const t=e.touches[0]; paintCell(t.clientX, t.clientY); } }, {passive:false});
+canvas.addEventListener('touchend', (e) => { e.preventDefault(); }, {passive:false});
+
+function togglePlay() {
+  playing = !playing;
+  playBtn.textContent = playing ? '⏸ Pause' : '▶ Play';
+  playBtn.classList.toggle('playing');
+  if (playing) { step(); timerId = setInterval(step, 1000 / speedSlider.value); }
+  else clearInterval(timerId);
+}
+
+playBtn.addEventListener('click', togglePlay);
+stepBtn.addEventListener('click', step);
+clearBtn.addEventListener('click', () => { grid = Array.from({length: GRID_H}, () => Array(GRID_W).fill(0)); gen = 0; draw(); updateHUD(); });
+
+modeBtn.addEventListener('click', () => {
+  const modes = ['life', 'sand', 'seeds'];
+  const idx = modes.indexOf(mode);
+  mode = modes[(idx + 1) % modes.length];
+  modeBtn.textContent = mode === 'life' ? '🌱 Life' : mode === 'sand' ? '🏖 Sand' : '🌱 Seeds';
+  if (playing) { clearInterval(timerId); togglePlay(); }
+  grid = Array.from({length: GRID_H}, () => Array(GRID_W).fill(0)); gen = 0;
+  draw(); updateHUD();
+});
+
+presetBtn.addEventListener('click', () => {
+  const p = Math.random() < 0.5 ? 0.3 : 0.5;
+  for (let r = 0; r < GRID_H; r++) for (let c = 0; c < GRID_W; c++) grid[r][c] = Math.random() < p ? 1 : 0;
+  gen = 0; draw(); updateHUD();
+});
+
+brushSlider.addEventListener('input', () => { brushValue.textContent = brushSlider.value; });
+speedSlider.addEventListener('input', () => { if (playing) { clearInterval(timerId); timerId = setInterval(step, 1000 / speedSlider.value); } });
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === ' ') { e.preventDefault(); togglePlay(); }
+  if (e.key === '1') { mode = 'life'; modeBtn.textContent = '🌱 Life'; grid = Array.from({length: GRID_H}, () => Array(GRID_W).fill(0)); gen = 0; draw(); updateHUD(); }
+  if (e.key === '2') { mode = 'sand'; modeBtn.textContent = '🏖 Sand'; grid = Array.from({length: GRID_H}, () => Array(GRID_W).fill(0)); gen = 0; draw(); updateHUD(); }
+  if (e.key === '3') { mode = 'seeds'; modeBtn.textContent = '🌱 Seeds'; grid = Array.from({length: GRID_H}, () => Array(GRID_W).fill(0)); gen = 0; draw(); updateHUD(); }
+});
+
+// Init with glider
+grid[2][3] = 1; grid[3][4] = 1; grid[4][2] = 1; grid[4][3] = 1; grid[4][4] = 1;
+draw(); updateHUD();
+</script>
+</body>
+</html>

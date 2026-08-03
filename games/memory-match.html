@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Memory Match</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #0a0a12; color: #e0e0e0;
+    min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 16px;
+  }
+  .container { max-width: 520px; width: 100%; text-align: center; }
+  h1 {
+    font-size: 1.4rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;
+    background: linear-gradient(90deg, #ff00cc, #ff8800, #ffcc00);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 2px;
+  }
+  .subtitle { font-size: 0.7rem; color: #555; margin-bottom: 8px; letter-spacing: 1px; }
+  .game-wrapper {
+    background: #0d0d1a; border-radius: 12px; padding: 8px; margin-bottom: 8px;
+    box-shadow: 0 0 30px rgba(255,0,204,0.05);
+  }
+  .grid {
+    display: grid; gap: 6px; margin: 0 auto;
+  }
+  .card {
+    aspect-ratio: 1; border-radius: 8px; cursor: pointer;
+    background: linear-gradient(135deg, #1a1a3e, #2a1a4e);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.8rem; user-select: none;
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: 1px solid #2a2a4e;
+  }
+  .card:hover { transform: scale(1.05); border-color: #555; }
+  .card.flipped { background: #1a1a2e; transform: scale(1); }
+  .card.matched {
+    background: #0a2a1a; border-color: #66ff88;
+    box-shadow: 0 0 12px rgba(102,255,136,0.3);
+    cursor: default; transform: scale(0.95);
+  }
+  .card.matched:hover { transform: scale(0.95); }
+  .hud {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 4px 4px 0; font-size: 0.8rem;
+  }
+  .hud-label { color: #555; font-size: 0.6rem; text-transform: uppercase; letter-spacing: 1px; }
+  .hud-value { font-size: 1rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .hud-moves .hud-value { color: #ffcc00; }
+  .hud-pairs .hud-value { color: #66ff88; }
+  .hud-timer .hud-value { color: #4488ff; }
+  .controls { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 6px 0; }
+  .btn {
+    padding: 6px 14px; border: none; border-radius: 8px;
+    font-size: 0.75rem; font-weight: 700; cursor: pointer;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    transition: transform 0.1s, box-shadow 0.2s;
+  }
+  .btn:active { transform: scale(0.95); }
+  .btn-new { background: #ff8800; color: #0a0a12; }
+  .btn-new:hover { box-shadow: 0 0 16px rgba(255,136,0,0.4); }
+  .btn-size { background: #6600ff; color: #fff; }
+  .btn-size:hover { box-shadow: 0 0 16px rgba(102,0,255,0.4); }
+  .overlay {
+    position: absolute; inset: 8px; border-radius: 8px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: rgba(10,10,18,0.88); opacity: 0; pointer-events: none;
+    transition: opacity 0.4s; z-index: 10;
+  }
+  .overlay.active { opacity: 1; pointer-events: all; }
+  .overlay h2 { font-size: 2rem; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 4px; }
+  .overlay .win-title { background: linear-gradient(90deg, #ffcc00, #66ff88); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .overlay p { color: #888; font-size: 0.9rem; margin-bottom: 12px; }
+  .overlay p span { color: #ffcc00; font-weight: 700; }
+  .game-wrapper { position: relative; }
+  @media (max-width: 500px) {
+    .card { font-size: 1.3rem; }
+    .btn { font-size: 0.65rem; padding: 5px 10px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🃏 Memory Match</h1>
+  <p class="subtitle">Flip · match · remember</p>
+  <div class="game-wrapper">
+    <div class="grid" id="grid"></div>
+    <div class="overlay" id="winOverlay">
+      <h2 class="win-title">🎉 You Win!</h2>
+      <p>Completed in <span id="finalMoves">0</span> moves · <span id="finalTime">0s</span></p>
+      <button class="btn btn-new" id="winPlayBtn">▶ Play Again</button>
+    </div>
+  </div>
+  <div class="hud">
+    <div class="hud-moves"><div class="hud-label">Moves</div><div class="hud-value" id="movesDisplay">0</div></div>
+    <div class="hud-pairs"><div class="hud-label">Pairs</div><div class="hud-value" id="pairsDisplay">0/8</div></div>
+    <div class="hud-timer"><div class="hud-label">Time</div><div class="hud-value" id="timerDisplay">0s</div></div>
+  </div>
+  <div class="controls">
+    <button class="btn btn-new" id="newBtn">🔄 New Game</button>
+    <button class="btn btn-size" id="sizeBtn">4×4</button>
+  </div>
+</div>
+<script>
+const EMOJIS = ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐸','🦁','🐯','🐮','🦄','🐧','🐤','🐴','🦋','🐝','🐞','🐙','🦀','🐳','🐬'];
+const gridEl = document.getElementById('grid');
+const movesDisplay = document.getElementById('movesDisplay');
+const pairsDisplay = document.getElementById('pairsDisplay');
+const timerDisplay = document.getElementById('timerDisplay');
+const newBtn = document.getElementById('newBtn');
+const sizeBtn = document.getElementById('sizeBtn');
+const winOverlay = document.getElementById('winOverlay');
+const finalMoves = document.getElementById('finalMoves');
+const finalTime = document.getElementById('finalTime');
+const winPlayBtn = document.getElementById('winPlayBtn');
+
+let gridSize = 4; // 4x4 = 16 cards, 8 pairs
+let cards = [];
+let flipped = [];
+let matched = new Set();
+let moves = 0;
+let pairs = 0;
+let timer = 0;
+let timerInterval = null;
+let lock = false;
+
+function shuffle(arr) { for (let i = arr.length - 1; i > 0; i--) { const j = Math.random() * (i+1) | 0; [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; }
+
+function initGame() {
+  clearInterval(timerInterval);
+  timerInterval = null; timer = 0; moves = 0; pairs = 0;
+  flipped = []; matched = new Set(); lock = false;
+  const total = gridSize * gridSize;
+  const pairCount = total / 2;
+  const emojis = shuffle([...EMOJIS]).slice(0, pairCount);
+  cards = shuffle([...emojis, ...emojis]);
+  movesDisplay.textContent = '0';
+  timerDisplay.textContent = '0s';
+  pairsDisplay.textContent = `0/${pairCount}`;
+  winOverlay.classList.remove('active');
+  renderGrid();
+}
+
+function renderGrid() {
+  gridEl.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+  gridEl.innerHTML = '';
+  cards.forEach((emoji, i) => {
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.dataset.idx = i;
+    div.addEventListener('click', () => flipCard(i));
+    gridEl.appendChild(div);
+  });
+}
+
+function flipCard(idx) {
+  if (lock || matched.has(idx) || flipped.includes(idx)) return;
+  if (!timerInterval) { timerInterval = setInterval(() => { timer++; timerDisplay.textContent = timer + 's'; }, 1000); }
+  const el = gridEl.children[idx];
+  el.textContent = cards[idx];
+  el.classList.add('flipped');
+  flipped.push(idx);
+  if (flipped.length === 2) {
+    moves++;
+    movesDisplay.textContent = moves;
+    lock = true;
+    if (cards[flipped[0]] === cards[flipped[1]]) {
+      matched.add(flipped[0]); matched.add(flipped[1]);
+      gridEl.children[flipped[0]].classList.add('matched');
+      gridEl.children[flipped[1]].classList.add('matched');
+      flipped = []; lock = false; pairs++;
+      pairsDisplay.textContent = `${pairs}/${cards.length/2}`;
+      if (matched.size === cards.length) {
+        clearInterval(timerInterval);
+        finalMoves.textContent = moves;
+        finalTime.textContent = timer + 's';
+        setTimeout(() => winOverlay.classList.add('active'), 400);
+      }
+    } else {
+      setTimeout(() => {
+        gridEl.children[flipped[0]].textContent = '';
+        gridEl.children[flipped[0]].classList.remove('flipped');
+        gridEl.children[flipped[1]].textContent = '';
+        gridEl.children[flipped[1]].classList.remove('flipped');
+        flipped = []; lock = false;
+      }, 800);
+    }
+  }
+}
+
+function cycleSize() {
+  const sizes = [4, 6, 8];
+  const idx = sizes.indexOf(gridSize);
+  gridSize = sizes[(idx + 1) % sizes.length];
+  sizeBtn.textContent = `${gridSize}×${gridSize}`;
+  initGame();
+}
+
+newBtn.addEventListener('click', initGame);
+sizeBtn.addEventListener('click', cycleSize);
+winPlayBtn.addEventListener('click', initGame);
+initGame();
+</script>
+</body>
+</html>

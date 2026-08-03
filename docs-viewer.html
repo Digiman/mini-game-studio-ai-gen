@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Docs — Mini Game Studio</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0c0c16;
+    --text: #d8d8e0;
+    --heading: #f0f0f8;
+    --link: #66bbff;
+    --link-hover: #88ddff;
+    --code-bg: #16162a;
+    --code-text: #ddccee;
+    --blockquote: #2a2a4a;
+    --blockquote-bar: #66ff88;
+    --hr: #2a2a3e;
+    --table-border: #2a2a3e;
+    --table-header-bg: #16162a;
+    --table-row-even: #0f0f1e;
+    --back-btn: #1a1a2e;
+    --back-btn-text: #aaa;
+    --back-btn-hover: #2a2a3e;
+    --back-btn-hover-text: #eee;
+    --nav-btn: #1a1a2e;
+    --nav-btn-text: #888;
+    --nav-btn-hover: #2a2a3e;
+    --nav-btn-hover-text: #ddd;
+    --nav-btn-disabled: #111120;
+    --nav-btn-disabled-text: #333;
+    --title-text: #ccc;
+    --meta-text: #666;
+    --loading-text: #888;
+    --error-text: #ff4466;
+    --scrollbar: #2a2a3e;
+    --scrollbar-hover: #3a3a5e;
+  }
+
+  body.light {
+    --bg: #f8f8f6;
+    --text: #2a2a2a;
+    --heading: #1a1a1a;
+    --link: #2266cc;
+    --link-hover: #0044aa;
+    --code-bg: #e8e8e4;
+    --code-text: #663388;
+    --blockquote: #e8e8e4;
+    --blockquote-bar: #44aa66;
+    --hr: #d8d8d0;
+    --table-border: #d8d8d0;
+    --table-header-bg: #e8e8e4;
+    --table-row-even: #f0f0ee;
+    --back-btn: #e8e8e4;
+    --back-btn-text: #555;
+    --back-btn-hover: #d8d8d0;
+    --back-btn-hover-text: #1a1a1a;
+    --nav-btn: #e8e8e4;
+    --nav-btn-text: #666;
+    --nav-btn-hover: #d8d8d0;
+    --nav-btn-hover-text: #1a1a1a;
+    --nav-btn-disabled: #f0f0ee;
+    --nav-btn-disabled-text: #bbb;
+    --title-text: #555;
+    --meta-text: #888;
+    --loading-text: #888;
+    --error-text: #cc2244;
+    --scrollbar: #d8d8d0;
+    --scrollbar-hover: #c0c0b8;
+  }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--scrollbar); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-hover); }
+
+/* ── Sidebar ── */
+	  :root { --sidebar-width: 260px; }
+
+	  .menu-btn {
+	    width: 34px; height: 34px; border-radius: 8px;
+	    border: 1px solid var(--hr); background: var(--back-btn); color: var(--back-btn-text);
+	    font-size: 1.1rem; cursor: pointer;
+	    display: flex; align-items: center; justify-content: center;
+	    transition: background 0.2s, color 0.2s, border-color 0.2s;
+	    flex-shrink: 0;
+	  }
+	  .menu-btn:hover { background: var(--back-btn-hover); color: var(--back-btn-hover-text); }
+
+	  .sidebar-overlay {
+	    position: fixed; inset: 0; z-index: 30;
+	    background: rgba(0,0,0,0.5);
+	    opacity: 0; pointer-events: none;
+	    transition: opacity 0.25s;
+	  }
+	  .sidebar-overlay.open { opacity: 1; pointer-events: auto; }
+
+	  .sidebar {
+	    position: fixed; top: 0; left: 0; bottom: 0; z-index: 31;
+	    width: var(--sidebar-width);
+	    background: var(--bg);
+	    border-right: 1px solid var(--hr);
+	    transform: translateX(-100%);
+	    transition: transform 0.25s, background 0.3s, border-color 0.3s;
+	    display: flex; flex-direction: column;
+	  }
+	  .sidebar.open { transform: translateX(0); }
+
+	  .sidebar-header {
+	    display: flex; align-items: center; justify-content: space-between;
+	    padding: 12px 14px;
+	    border-bottom: 1px solid var(--hr);
+	    font-size: 0.85rem; font-weight: 700; color: var(--heading);
+	    text-transform: uppercase; letter-spacing: 0.5px;
+	  }
+	  .sidebar-header .close-btn {
+	    width: 28px; height: 28px; border-radius: 6px; border: none;
+	    background: var(--back-btn); color: var(--back-btn-text);
+	    font-size: 1rem; cursor: pointer;
+	    display: flex; align-items: center; justify-content: center;
+	    transition: background 0.2s;
+	  }
+	  .sidebar-header .close-btn:hover { background: var(--back-btn-hover); color: var(--back-btn-hover-text); }
+
+	  .sidebar-list {
+	    flex: 1; overflow-y: auto;
+	    padding: 8px 0;
+	  }
+	  .sidebar-list::-webkit-scrollbar { width: 6px; }
+	  .sidebar-list::-webkit-scrollbar-thumb { background: var(--scrollbar); border-radius: 3px; }
+
+	  .sidebar-item {
+	    display: block; width: 100%; text-align: left;
+	    padding: 10px 16px; border: none; border-radius: 0;
+	    font-size: 0.85rem; font-weight: 500; cursor: pointer;
+	    background: transparent; color: var(--text);
+	    transition: background 0.15s, color 0.15s;
+	    line-height: 1.3;
+	  }
+	  .sidebar-item:hover { background: var(--nav-btn-hover); color: var(--heading); }
+	  .sidebar-item.active {
+	    background: var(--code-bg);
+	    color: var(--heading);
+	    font-weight: 700;
+	    border-left: 3px solid var(--link);
+	    padding-left: 13px;
+	  }
+
+	  .top-bar {
+	    position: sticky; top: 0; z-index: 20;
+	    display: flex; align-items: center; gap: 8px;
+	    padding: 10px 16px;
+	    background: var(--bg);
+	    border-bottom: 1px solid var(--hr);
+	    transition: background 0.3s, border-color 0.3s;
+	  }
+	  .top-bar .back-btn {
+	    padding: 6px 14px; border: none; border-radius: 8px;
+	    font-size: 0.8rem; font-weight: 700; cursor: pointer;
+	    text-decoration: none; text-transform: uppercase; letter-spacing: 0.5px;
+	    background: var(--back-btn); color: var(--back-btn-text);
+	    transition: background 0.2s, color 0.2s;
+	  }
+	  .top-bar .back-btn:hover { background: var(--back-btn-hover); color: var(--back-btn-hover-text); }
+	  .top-bar .nav-btn {
+	    padding: 6px 12px; border: none; border-radius: 8px;
+	    font-size: 0.85rem; cursor: pointer; font-weight: 600;
+	    background: var(--nav-btn); color: var(--nav-btn-text);
+	    transition: background 0.2s, color 0.2s;
+	  }
+	  .top-bar .nav-btn:hover:not(:disabled) { background: var(--nav-btn-hover); color: var(--nav-btn-hover-text); }
+	  .top-bar .nav-btn:disabled { background: var(--nav-btn-disabled); color: var(--nav-btn-disabled-text); cursor: default; }
+	  .top-bar .spacer { flex: 1; }
+	  .top-bar .title-area { font-size: 0.8rem; font-weight: 600; color: var(--title-text); }
+	  .theme-toggle {
+	    width: 34px; height: 34px; border-radius: 50%;
+	    border: 1px solid var(--hr); background: var(--back-btn); color: var(--back-btn-text);
+	    font-size: 1rem; cursor: pointer;
+	    display: flex; align-items: center; justify-content: center;
+	    transition: background 0.2s, color 0.2s, border-color 0.2s;
+	  }
+	  .theme-toggle:hover { background: var(--back-btn-hover); color: var(--back-btn-hover-text); }
+
+	  .layout {
+	    display: flex; min-height: calc(100vh - 57px);
+	  }
+
+	  .content {
+	    flex: 1; max-width: 800px; margin: 0 auto; padding: 32px 24px 60px;
+	    line-height: 1.7; font-size: 0.95rem;
+	  }
+
+	  .loading, .error {
+	    text-align: center; padding: 60px 20px; font-size: 1rem;
+	  }
+	  .loading { color: var(--loading-text); }
+	  .error { color: var(--error-text); }
+	
+	  /* ── Rendered Markdown ── */
+  .content h1 { font-size: 1.8rem; font-weight: 800; color: var(--heading); margin: 0 0 6px 0; letter-spacing: -0.5px; }
+  .content h2 { font-size: 1.35rem; font-weight: 700; color: var(--heading); margin: 32px 0 10px 0; padding-bottom: 6px; border-bottom: 1px solid var(--hr); }
+  .content h3 { font-size: 1.1rem; font-weight: 700; color: var(--heading); margin: 24px 0 8px 0; }
+  .content p { margin: 0 0 14px 0; }
+  .content a { color: var(--link); text-decoration: none; }
+  .content a:hover { color: var(--link-hover); text-decoration: underline; }
+  .content strong { font-weight: 700; color: var(--heading); }
+  .content em { font-style: italic; }
+  .content code {
+    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    font-size: 0.85em; padding: 1px 6px; border-radius: 4px;
+    background: var(--code-bg); color: var(--code-text);
+  }
+  .content pre {
+    margin: 14px 0; padding: 14px 16px; border-radius: 8px;
+    background: var(--code-bg); overflow-x: auto;
+    border: 1px solid var(--hr);
+  }
+  .content pre code {
+    background: none; padding: 0; font-size: 0.82rem; color: var(--text);
+    line-height: 1.5;
+  }
+  .content blockquote {
+    margin: 14px 0; padding: 8px 16px; border-left: 4px solid var(--blockquote-bar);
+    background: var(--blockquote); border-radius: 0 8px 8px 0;
+    color: var(--text);
+  }
+  .content hr {
+    margin: 24px 0; border: none; border-top: 1px solid var(--hr);
+  }
+  .content ul, .content ol {
+    margin: 0 0 14px 0; padding-left: 24px;
+  }
+  .content li { margin-bottom: 4px; }
+  .content table {
+    width: 100%; border-collapse: collapse; margin: 14px 0;
+    font-size: 0.85rem;
+  }
+  .content th, .content td {
+    padding: 8px 12px; border: 1px solid var(--table-border);
+    text-align: left;
+  }
+  .content th {
+    background: var(--table-header-bg); font-weight: 700; color: var(--heading);
+  }
+  .content tr:nth-child(even) { background: var(--table-row-even); }
+  .content img { max-width: 100%; border-radius: 8px; margin: 14px 0; }
+  .content .file-path {
+    font-family: 'Consolas', monospace; font-size: 0.85rem;
+    padding: 6px 12px; background: var(--code-bg); border-radius: 6px;
+    display: inline-block; border: 1px solid var(--hr);
+  }
+
+@media (max-width: 600px) {
+	    .content { padding: 20px 16px 40px; font-size: 0.9rem; }
+	    .content h1 { font-size: 1.4rem; }
+	    .top-bar { padding: 8px 10px; flex-wrap: wrap; }
+	    .top-bar .title-area { font-size: 0.7rem; }
+	    :root { --sidebar-width: 220px; }
+	  }
+</style>
+</head>
+<body>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <span>📚 All Games</span>
+      <button class="close-btn" id="sidebarClose" title="Close">✕</button>
+    </div>
+    <div class="sidebar-list" id="sidebarList"></div>
+  </div>
+  <div class="top-bar">
+    <button class="menu-btn" id="menuBtn" title="Show all games">☰</button>
+    <a href="index.html" class="back-btn">← Back</a>
+    <button class="nav-btn" id="prevBtn" title="Previous game">◀</button>
+    <button class="nav-btn" id="nextBtn" title="Next game">▶</button>
+    <span class="spacer"></span>
+    <span class="title-area" id="titleArea">Loading...</span>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">🌙</button>
+  </div>
+  <div class="layout">
+    <div class="content" id="content">
+      <div class="loading" id="loading">Loading documentation...</div>
+    </div>
+  </div>
+<script src="embedded-docs.js"></script>
+<script>
+  // ── Game list for navigation ──
+  const GAMES = [
+    { id: 'landscape-generator', name: '🏔️ Landscape Generator' },
+    { id: 'snake-game',          name: '🐍 Neon Snake' },
+    { id: 'asteroid-shooter',   name: '☄️ Asteroid Shooter' },
+    { id: 'particle-sandbox',   name: '✦ Particle Sandbox' },
+    { id: 'mandelbrot-explorer',name: '🌀 Mandelbrot Explorer' },
+    { id: 'piano-sequencer',    name: '🎹 Piano / Sequencer' },
+    { id: 'memory-match',       name: '🃏 Memory Match' },
+    { id: 'minesweeper',        name: '💣 Minesweeper' },
+    { id: 'sokoban',            name: '🧩 Sokoban' },
+    { id: 'pong-breakout',      name: '🏓 Pong / Breakout' },
+    { id: 'cellular-automata',  name: '🌊 Cellular Automata' },
+    { id: 'connect-four',       name: '⚫ Connect Four' },
+    { id: 'pixel-art-editor',   name: '🎨 Pixel Art Editor' },
+    { id: 'reaction-test',      name: '🔮 Reaction Test' },
+  ];
+
+const contentEl = document.getElementById('content');
+	  const loadingEl = document.getElementById('loading');
+	  const titleArea = document.getElementById('titleArea');
+	  const prevBtn = document.getElementById('prevBtn');
+	  const nextBtn = document.getElementById('nextBtn');
+	  const sidebar = document.getElementById('sidebar');
+	  const sidebarOverlay = document.getElementById('sidebarOverlay');
+	  const sidebarList = document.getElementById('sidebarList');
+	  const menuBtn = document.getElementById('menuBtn');
+	  const sidebarClose = document.getElementById('sidebarClose');
+	
+	  let currentIdx = -1;
+
+  // ── Theme ──
+  const toggle = document.getElementById('themeToggle');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  let theme = localStorage.getItem('docs_theme') || (prefersDark ? 'dark' : 'light');
+  function applyTheme(t) {
+    if (t === 'light') { document.body.classList.add('light'); toggle.textContent = '☀️'; }
+    else { document.body.classList.remove('light'); toggle.textContent = '🌙'; }
+    localStorage.setItem('docs_theme', t);
+  }
+  applyTheme(theme);
+  toggle.addEventListener('click', () => { theme = theme === 'dark' ? 'light' : 'dark'; applyTheme(theme); });
+
+  // ── Markdown parser ──
+  function escapeHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function renderMarkdown(md) {
+    // Split into lines
+    let lines = md.split('\n');
+    let html = '';
+    let i = 0;
+    let inCodeBlock = false;
+    let codeBlockContent = '';
+    let codeBlockLang = '';
+
+    while (i < lines.length) {
+      let line = lines[i];
+
+      // Fenced code block
+      if (line.trim().startsWith('```')) {
+        if (inCodeBlock) {
+          html += '<pre><code>' + escapeHtml(codeBlockContent) + '</code></pre>\n';
+          codeBlockContent = '';
+          inCodeBlock = false;
+          i++;
+          continue;
+        } else {
+          inCodeBlock = true;
+          codeBlockLang = line.trim().slice(3).trim();
+          i++;
+          continue;
+        }
+      }
+      if (inCodeBlock) {
+        codeBlockContent += (codeBlockContent ? '\n' : '') + line;
+        i++;
+        continue;
+      }
+
+      // Horizontal rule
+      if (/^---+$/.test(line.trim())) {
+        html += '<hr>\n'; i++; continue;
+      }
+
+      // Headings
+      const hMatch = line.match(/^(#{1,3})\s+(.+)$/);
+      if (hMatch) {
+        const level = hMatch[1].length;
+        const text = parseInline(hMatch[2]);
+        html += `<h${level}>${text}</h${level}>\n`;
+        i++; continue;
+      }
+
+      // Unordered list
+      if (line.match(/^[\s]*[-*+]\s+/)) {
+        html += '<ul>\n';
+        while (i < lines.length && lines[i].match(/^[\s]*[-*+]\s+/)) {
+          const item = lines[i].replace(/^[\s]*[-*+]\s+/, '');
+          html += '<li>' + parseInline(item) + '</li>\n';
+          i++;
+        }
+        html += '</ul>\n';
+        continue;
+      }
+
+      // Ordered list
+      if (line.match(/^[\s]*\d+\.\s+/)) {
+        html += '<ol>\n';
+        while (i < lines.length && lines[i].match(/^[\s]*\d+\.\s+/)) {
+          const item = lines[i].replace(/^[\s]*\d+\.\s+/, '');
+          html += '<li>' + parseInline(item) + '</li>\n';
+          i++;
+        }
+        html += '</ol>\n';
+        continue;
+      }
+
+      // Table
+      if (line.includes('|') && lines[i+1] && lines[i+1].match(/^[\s]*\|[\s]*[-:]+\|/)) {
+        html += '<table>\n';
+        // Header
+        const headers = line.split('|').filter(s => s.trim()).map(s => s.trim());
+        html += '<thead><tr>';
+        for (const h of headers) html += '<th>' + parseInline(h) + '</th>';
+        html += '</tr></thead>\n';
+        i += 2; // skip separator row
+        // Body
+        html += '<tbody>\n';
+        while (i < lines.length && lines[i].includes('|')) {
+          const cells = lines[i].split('|').filter(s => s.trim()).map(s => s.trim());
+          html += '<tr>';
+          for (const c of cells) html += '<td>' + parseInline(c) + '</td>';
+          html += '</tr>\n';
+          i++;
+        }
+        html += '</tbody>\n</table>\n';
+        continue;
+      }
+
+      // Blockquote
+      if (line.trim().startsWith('> ')) {
+        html += '<blockquote>\n';
+        while (i < lines.length && lines[i].trim().startsWith('> ')) {
+          html += '<p>' + parseInline(lines[i].trim().slice(2)) + '</p>\n';
+          i++;
+        }
+        html += '</blockquote>\n';
+        continue;
+      }
+
+      // Empty line = paragraph break
+      if (line.trim() === '') {
+        i++; continue;
+      }
+
+      // Regular paragraph
+      let para = '';
+      while (i < lines.length && lines[i].trim() !== '' && !lines[i].match(/^[#>\-*|]|^```|^\d+\./) && !lines[i].match(/^---+$/)) {
+        para += (para ? ' ' : '') + parseInline(lines[i].trim());
+        i++;
+      }
+      if (para) html += '<p>' + para + '</p>\n';
+      else i++;
+    }
+
+    return html;
+  }
+
+  function parseInline(text) {
+    // Code spans
+    text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+    // Bold
+    text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    // Italic
+    text = text.replace(/\*(.+?)\*/g, '<em>$1</em>');
+    // Links
+    text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+    // Escape HTML
+    text = text.replace(/&(?!amp;|lt;|gt;|quot;)/g, '&amp;');
+    return text;
+  }
+
+// ── Load docs ──
+function loadDoc(gameId) {
+  const idx = GAMES.findIndex(g => g.id === gameId);
+  if (idx === -1) { showError('Game not found'); return; }
+  currentIdx = idx;
+
+  const game = GAMES[idx];
+  titleArea.textContent = game.name;
+  updateNav();
+  updateSidebarActive();
+  closeSidebar();
+  contentEl.innerHTML = '<div class="loading" id="loading">Loading documentation...</div>';
+
+  // Try fetching the markdown file from the docs/ folder first
+  fetch('docs/' + encodeURIComponent(game.id) + '.md')
+    .then(function(res) {
+      if (!res.ok) throw new Error('Not found');
+      return res.text();
+    })
+    .then(function(md) {
+      renderAndShow(md, game);
+    })
+    .catch(function() {
+      // Fallback: use embedded DOCS object
+      var md = DOCS[game.id];
+      if (!md) {
+        showError('Could not load documentation for this game.');
+        return;
+      }
+      renderAndShow(md, game);
+    });
+}
+
+function renderAndShow(md, game) {
+  var rendered = renderMarkdown(md);
+  contentEl.innerHTML = '<div class="rendered">' + rendered + '</div>';
+  document.title = game.name + ' — Docs — Mini Game Studio';
+  history.replaceState(null, '', '?game=' + game.id);
+}
+
+function showError(msg) {
+  contentEl.innerHTML = `<div class="error">${msg}</div>`;
+}
+
+function updateNav() {
+  prevBtn.disabled = currentIdx <= 0;
+  nextBtn.disabled = currentIdx >= GAMES.length - 1;
+}
+
+// ── Sidebar ──
+function buildSidebar() {
+  sidebarList.innerHTML = '';
+  for (var i = 0; i < GAMES.length; i++) {
+    var btn = document.createElement('button');
+    btn.className = 'sidebar-item';
+    btn.textContent = GAMES[i].name;
+    btn.dataset.index = i;
+    btn.addEventListener('click', function() {
+      var idx = parseInt(this.dataset.index);
+      loadDoc(GAMES[idx].id);
+    });
+    sidebarList.appendChild(btn);
+  }
+}
+
+function updateSidebarActive() {
+  var items = sidebarList.querySelectorAll('.sidebar-item');
+  for (var i = 0; i < items.length; i++) {
+    items[i].classList.toggle('active', i === currentIdx);
+  }
+}
+
+function openSidebar() {
+  sidebar.classList.add('open');
+  sidebarOverlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeSidebar() {
+  sidebar.classList.remove('open');
+  sidebarOverlay.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function toggleSidebar() {
+  if (sidebar.classList.contains('open')) {
+    closeSidebar();
+  } else {
+    openSidebar();
+  }
+}
+
+  function goPrev() {
+    if (currentIdx > 0) loadDoc(GAMES[currentIdx - 1].id);
+  }
+  function goNext() {
+    if (currentIdx < GAMES.length - 1) loadDoc(GAMES[currentIdx + 1].id);
+  }
+
+  prevBtn.addEventListener('click', goPrev);
+  nextBtn.addEventListener('click', goNext);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft') { e.preventDefault(); goPrev(); }
+    if (e.key === 'ArrowRight') { e.preventDefault(); goNext(); }
+    if (e.key === 'Escape') { closeSidebar(); }
+  });
+
+  // ── Sidebar events ──
+  menuBtn.addEventListener('click', toggleSidebar);
+  sidebarClose.addEventListener('click', closeSidebar);
+  sidebarOverlay.addEventListener('click', closeSidebar);
+  buildSidebar();
+
+  // ── Init from URL ──
+  const params = new URLSearchParams(window.location.search);
+  const gameId = params.get('game');
+  if (gameId) {
+    loadDoc(gameId);
+  } else {
+    loadDoc(GAMES[0].id);
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Particle Sandbox</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #0a0a12;
+    color: #e0e0e0;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+  }
+
+  .container {
+    text-align: center;
+    max-width: 620px;
+    width: 100%;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    background: linear-gradient(90deg, #ff8800, #ffcc00, #66ff88, #4488ff);
+    background-size: 300% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmer 5s ease-in-out infinite;
+    margin-bottom: 2px;
+  }
+  @keyframes shimmer {
+    0% { background-position: 0% center; }
+    50% { background-position: 100% center; }
+    100% { background-position: 0% center; }
+  }
+
+  .subtitle {
+    font-size: 0.75rem;
+    color: #555;
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+  }
+
+  .canvas-wrapper {
+    background: #0d0d1a;
+    border-radius: 12px;
+    padding: 6px;
+    box-shadow: 0 0 40px rgba(255, 136, 0, 0.06);
+    margin-bottom: 10px;
+    position: relative;
+  }
+
+  canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1 / 1;
+    border-radius: 8px;
+    background: #0a0a16;
+    cursor: crosshair;
+    touch-action: none;
+  }
+
+  .hud-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 4px 2px 4px;
+    font-size: 0.8rem;
+  }
+  .hud-left, .hud-right {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .hud-label {
+    color: #555;
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .hud-value {
+    font-size: 1rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .hud-count .hud-value { color: #66ff88; }
+  .hud-fps .hud-value { color: #888; }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    margin: 6px 0 8px 0;
+  }
+
+  .btn {
+    padding: 6px 14px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: transform 0.1s, box-shadow 0.2s, background 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .btn:active { transform: scale(0.95); }
+
+  .btn-spawn  { background: #ff8800; color: #0a0a12; }
+  .btn-spawn:hover { box-shadow: 0 0 16px rgba(255,136,0,0.4); }
+
+  .btn-clear  { background: #ff3344; color: #fff; }
+  .btn-clear:hover { box-shadow: 0 0 16px rgba(255,51,68,0.4); }
+
+  .btn-emit   { background: #66ff88; color: #0a0a12; }
+  .btn-emit:hover { box-shadow: 0 0 16px rgba(102,255,136,0.4); }
+
+  .toggle {
+    padding: 6px 14px;
+    border: 2px solid #444;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: transparent;
+    color: #888;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .toggle.active {
+    border-color: #66ff88;
+    color: #66ff88;
+    box-shadow: 0 0 12px rgba(102,255,136,0.15);
+  }
+  .toggle:active { transform: scale(0.95); }
+  .toggle.wind-active {
+    border-color: #4488ff;
+    color: #4488ff;
+    box-shadow: 0 0 12px rgba(68,136,255,0.15);
+  }
+
+  .controls-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    margin-bottom: 8px;
+  }
+
+  .controls-row label {
+    font-size: 0.75rem;
+    color: #888;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  input[type="range"] {
+    width: 60px;
+    accent-color: #ff8800;
+    vertical-align: middle;
+  }
+
+  .color-picker-group {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+  .color-picker-group input[type="color"] {
+    width: 28px;
+    height: 28px;
+    border: 2px solid #444;
+    border-radius: 6px;
+    background: none;
+    cursor: pointer;
+    padding: 0;
+  }
+  .color-picker-group input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+  .color-picker-group input[type="color"]::-webkit-color-swatch { border: none; border-radius: 4px; }
+
+  .key-hint {
+    font-size: 0.6rem;
+    color: #444;
+    margin-top: 4px;
+  }
+  .key-hint kbd {
+    background: #14142a;
+    padding: 1px 6px;
+    border-radius: 3px;
+    border: 1px solid #333;
+    font-family: inherit;
+    color: #777;
+  }
+
+  @media (max-width: 500px) {
+    .btn, .toggle { font-size: 0.7rem; padding: 5px 10px; }
+    .hud-bar { font-size: 0.7rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>✦ Particle Sandbox</h1>
+  <p class="subtitle">Click · drag · play with physics</p>
+
+  <div class="canvas-wrapper">
+    <canvas id="canvas" width="600" height="600"></canvas>
+  </div>
+
+  <div class="hud-bar">
+    <div class="hud-left">
+      <div class="hud-count">
+        <div class="hud-label">Particles</div>
+        <div class="hud-value" id="countDisplay">0</div>
+      </div>
+    </div>
+    <div class="hud-right">
+      <div class="hud-fps">
+        <div class="hud-label">FPS</div>
+        <div class="hud-value" id="fpsDisplay">60</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="btn btn-spawn" id="spawnBtn">✚ Spawn</button>
+    <button class="btn btn-emit" id="emitBtn">✦ Burst 50</button>
+    <button class="btn btn-clear" id="clearBtn">✕ Clear</button>
+  </div>
+
+  <div class="controls-row">
+    <button class="toggle active" id="gravityToggle">🌍 Gravity</button>
+    <button class="toggle" id="windToggle">🌬 Wind</button>
+    <button class="toggle active" id="collideToggle">⚡ Collide</button>
+    <button class="toggle active" id="bounceToggle">↗ Bounce</button>
+  </div>
+
+  <div class="controls-row">
+    <label>
+      Size
+      <input type="range" id="sizeSlider" min="2" max="12" value="5">
+      <span id="sizeValue">5</span>
+    </label>
+    <label>
+      Speed
+      <input type="range" id="speedSlider" min="1" max="20" value="6">
+      <span id="speedValue">6</span>
+    </label>
+    <label>
+      Gravity
+      <input type="range" id="gravitySlider" min="0" max="20" value="6">
+      <span id="gravityValue">0.6</span>
+    </label>
+    <label>
+      Wind
+      <input type="range" id="windSlider" min="0" max="10" value="3">
+      <span id="windValue">0.3</span>
+    </label>
+    <div class="color-picker-group">
+      <label>Color</label>
+      <input type="color" id="colorPicker" value="#ff8800">
+    </div>
+  </div>
+
+  <div class="key-hint">
+    <kbd>Click</kbd> <kbd>Drag</kbd> spawn particles · <kbd>G</kbd> gravity · <kbd>W</kbd> wind · <kbd>C</kbd> collide · <kbd>B</kbd> bounce · <kbd>1-4</kbd> presets
+  </div>
+</div>
+
+<script>
+// ─── Canvas ─────────────────────────────────────────────────────────────────
+const W = 600, H = 600;
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+// ─── DOM refs ───────────────────────────────────────────────────────────────
+const countDisplay = document.getElementById('countDisplay');
+const fpsDisplay = document.getElementById('fpsDisplay');
+const spawnBtn = document.getElementById('spawnBtn');
+const emitBtn = document.getElementById('emitBtn');
+const clearBtn = document.getElementById('clearBtn');
+const gravityToggle = document.getElementById('gravityToggle');
+const windToggle = document.getElementById('windToggle');
+const collideToggle = document.getElementById('collideToggle');
+const bounceToggle = document.getElementById('bounceToggle');
+const sizeSlider = document.getElementById('sizeSlider');
+const sizeValue = document.getElementById('sizeValue');
+const speedSlider = document.getElementById('speedSlider');
+const speedValue = document.getElementById('speedValue');
+const gravitySlider = document.getElementById('gravitySlider');
+const gravityValue = document.getElementById('gravityValue');
+const windSlider = document.getElementById('windSlider');
+const windValue = document.getElementById('windValue');
+const colorPicker = document.getElementById('colorPicker');
+
+// ─── State ──────────────────────────────────────────────────────────────────
+let particles = [];
+let gravityEnabled = true;
+let windEnabled = false;
+let collideEnabled = true;
+let bounceEnabled = true;
+let mouseDown = false;
+let mouseX = 0, mouseY = 0;
+let animId = null;
+let lastTime = 0;
+let fpsFrames = 0;
+let fpsTime = 0;
+
+// ─── Particle ───────────────────────────────────────────────────────────────
+function createParticle(x, y, vx, vy, radius, color) {
+  return {
+    x, y,
+    vx: vx || 0,
+    vy: vy || 0,
+    radius: radius || 5,
+    color: color || '#ff8800',
+    mass: 1,
+    life: 0,
+  };
+}
+
+function spawnParticles(x, y, count) {
+  const radius = parseInt(sizeSlider.value, 10);
+  const speed = parseInt(speedSlider.value, 10);
+  const color = colorPicker.value;
+
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const spd = Math.random() * speed * 0.8 + speed * 0.2;
+    const r = radius * (0.6 + Math.random() * 0.4);
+    particles.push(createParticle(
+      x + (Math.random() - 0.5) * 4,
+      y + (Math.random() - 0.5) * 4,
+      Math.cos(angle) * spd,
+      Math.sin(angle) * spd,
+      r,
+      color,
+    ));
+  }
+  updateCount();
+}
+
+function burstParticles(count) {
+  const cx = Math.random() * W * 0.6 + W * 0.2;
+  const cy = Math.random() * H * 0.6 + H * 0.2;
+  spawnParticles(cx, cy, count);
+}
+
+// ─── Physics ────────────────────────────────────────────────────────────────
+function updatePhysics() {
+  const gravity = parseInt(gravitySlider.value, 10) / 10;
+  const wind = parseInt(windSlider.value, 10) / 10;
+  const subSteps = 3;
+  const dt = 1 / subSteps;
+
+  for (let step = 0; step < subSteps; step++) {
+    // Apply forces
+    for (const p of particles) {
+      if (gravityEnabled) p.vy += gravity * dt;
+      if (windEnabled) p.vx += wind * dt;
+      p.vx *= 0.999; // tiny air drag
+      p.vy *= 0.999;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.life += dt;
+    }
+
+    // Wall collisions
+    if (bounceEnabled) {
+      for (const p of particles) {
+        if (p.x - p.radius < 0) { p.x = p.radius; p.vx = -p.vx * 0.7; }
+        if (p.x + p.radius > W) { p.x = W - p.radius; p.vx = -p.vx * 0.7; }
+        if (p.y - p.radius < 0) { p.y = p.radius; p.vy = -p.vy * 0.7; }
+        if (p.y + p.radius > H) { p.y = H - p.radius; p.vy = -p.vy * 0.7; }
+      }
+    } else {
+      // Wrap or remove particles that go off screen
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        if (p.x < -p.radius * 2 || p.x > W + p.radius * 2 ||
+            p.y < -p.radius * 2 || p.y > H + p.radius * 2) {
+          particles.splice(i, 1);
+        }
+      }
+    }
+
+    // Particle-particle collisions
+    if (collideEnabled) {
+      const cellSize = 20;
+      const gridCols = Math.ceil(W / cellSize);
+      const gridRows = Math.ceil(H / cellSize);
+      const grid = new Map();
+
+      for (const p of particles) {
+        const gx = Math.floor(p.x / cellSize);
+        const gy = Math.floor(p.y / cellSize);
+        const key = `${gx},${gy}`;
+        if (!grid.has(key)) grid.set(key, []);
+        grid.get(key).push(p);
+      }
+
+      for (let i = 0; i < particles.length; i++) {
+        const a = particles[i];
+        const gx = Math.floor(a.x / cellSize);
+        const gy = Math.floor(a.y / cellSize);
+
+        for (let dx = -1; dx <= 1; dx++) {
+          for (let dy = -1; dy <= 1; dy++) {
+            const key = `${gx + dx},${gy + dy}`;
+            const cell = grid.get(key);
+            if (!cell) continue;
+
+            for (const b of cell) {
+              if (a === b) continue;
+              if (a._collidedWith === b) continue; // skip paired check
+
+              const dxp = b.x - a.x;
+              const dyp = b.y - a.y;
+              const dist = Math.hypot(dxp, dyp);
+              const minDist = a.radius + b.radius;
+
+              if (dist < minDist && dist > 0.001) {
+                const overlap = (minDist - dist) / 2;
+                const nx = dxp / dist;
+                const ny = dyp / dist;
+
+                // Separate
+                a.x -= nx * overlap;
+                a.y -= ny * overlap;
+                b.x += nx * overlap;
+                b.y += ny * overlap;
+
+                // Elastic collision response
+                const relVx = a.vx - b.vx;
+                const relVy = a.vy - b.vy;
+                const relVn = relVx * nx + relVy * ny;
+
+                if (relVn > 0) {
+                  const restitution = 0.7;
+                  const impulse = relVn * (1 + restitution) / (a.mass + b.mass);
+                  a.vx -= impulse * b.mass * nx;
+                  a.vy -= impulse * b.mass * ny;
+                  b.vx += impulse * a.mass * nx;
+                  b.vy += impulse * a.mass * ny;
+                }
+
+                a._collidedWith = b;
+                b._collidedWith = a;
+              }
+            }
+          }
+        }
+      }
+      // Clear collision flags
+      for (const p of particles) p._collidedWith = null;
+    }
+  }
+
+  // Cap particle count
+  if (particles.length > 3000) {
+    particles.splice(0, particles.length - 3000);
+  }
+
+  updateCount();
+}
+
+// ─── Draw ───────────────────────────────────────────────────────────────────
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#0a0a16';
+  ctx.fillRect(0, 0, W, H);
+
+  // Grid dots (subtle)
+  ctx.fillStyle = 'rgba(255,255,255,0.03)';
+  for (let x = 0; x < W; x += 30) {
+    for (let y = 0; y < H; y += 30) {
+      ctx.beginPath(); ctx.arc(x, y, 0.5, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+
+  // Draw particles
+  for (const p of particles) {
+    ctx.shadowColor = p.color;
+    ctx.shadowBlur = 8;
+    ctx.fillStyle = p.color;
+    ctx.globalAlpha = Math.min(1, 0.4 + p.life * 0.02);
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  ctx.shadowBlur = 0;
+
+  // Mouse preview
+  if (mouseDown && mouseX >= 0 && mouseX <= W && mouseY >= 0 && mouseY <= H) {
+    const r = parseInt(sizeSlider.value, 10);
+    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.arc(mouseX, mouseY, r, 0, Math.PI * 2); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+}
+
+// ─── Game Loop ──────────────────────────────────────────────────────────────
+function loop(time) {
+  const dt = lastTime ? time - lastTime : 16;
+  lastTime = time;
+
+  // FPS counter
+  fpsFrames++;
+  if (time - fpsTime > 1000) {
+    fpsDisplay.textContent = fpsFrames;
+    fpsFrames = 0;
+    fpsTime = time;
+  }
+
+  // Spawn while holding mouse
+  if (mouseDown && mouseX >= 0 && mouseX <= W && mouseY >= 0 && mouseY <= H) {
+    if (Math.random() < 0.3) {
+      const radius = parseInt(sizeSlider.value, 10);
+      const speed = parseInt(speedSlider.value, 10);
+      const color = colorPicker.value;
+      const angle = Math.random() * Math.PI * 2;
+      const spd = Math.random() * speed * 0.5;
+      const r = radius * (0.6 + Math.random() * 0.4);
+      particles.push(createParticle(
+        mouseX + (Math.random() - 0.5) * 4,
+        mouseY + (Math.random() - 0.5) * 4,
+        Math.cos(angle) * spd,
+        Math.sin(angle) * spd,
+        r,
+        color,
+      ));
+    }
+  }
+
+  updatePhysics();
+  draw();
+  animId = requestAnimationFrame(loop);
+}
+
+// ─── UI Updates ─────────────────────────────────────────────────────────────
+function updateCount() {
+  countDisplay.textContent = particles.length;
+}
+
+// ─── Input: Mouse ───────────────────────────────────────────────────────────
+canvas.addEventListener('mousedown', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  mouseX = (e.clientX - rect.left) * scaleX;
+  mouseY = (e.clientY - rect.top) * scaleY;
+  mouseDown = true;
+  spawnParticles(mouseX, mouseY, 8);
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  mouseX = (e.clientX - rect.left) * scaleX;
+  mouseY = (e.clientY - rect.top) * scaleY;
+});
+
+canvas.addEventListener('mouseup', () => { mouseDown = false; });
+canvas.addEventListener('mouseleave', () => { mouseDown = false; });
+
+// ─── Input: Touch ───────────────────────────────────────────────────────────
+canvas.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const t = e.touches[0];
+  mouseX = (t.clientX - rect.left) * scaleX;
+  mouseY = (t.clientY - rect.top) * scaleY;
+  mouseDown = true;
+  spawnParticles(mouseX, mouseY, 8);
+}, { passive: false });
+
+canvas.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const t = e.touches[0];
+  mouseX = (t.clientX - rect.left) * scaleX;
+  mouseY = (t.clientY - rect.top) * scaleY;
+}, { passive: false });
+
+canvas.addEventListener('touchend', (e) => { e.preventDefault(); mouseDown = false; }, { passive: false });
+
+// ─── Keyboard Shortcuts ─────────────────────────────────────────────────────
+document.addEventListener('keydown', (e) => {
+  switch (e.key.toLowerCase()) {
+    case 'g': gravityToggle.click(); break;
+    case 'w': windToggle.click(); break;
+    case 'c': collideToggle.click(); break;
+    case 'b': bounceToggle.click(); break;
+    case '1': colorPicker.value = '#ff8800'; break; // orange
+    case '2': colorPicker.value = '#00ffff'; break; // cyan
+    case '3': colorPicker.value = '#66ff88'; break; // green
+    case '4': colorPicker.value = '#ff00cc'; break; // pink
+  }
+});
+
+// ─── Toggles ────────────────────────────────────────────────────────────────
+gravityToggle.addEventListener('click', () => {
+  gravityEnabled = !gravityEnabled;
+  gravityToggle.classList.toggle('active');
+});
+
+windToggle.addEventListener('click', () => {
+  windEnabled = !windEnabled;
+  windToggle.classList.toggle('wind-active');
+});
+
+collideToggle.addEventListener('click', () => {
+  collideEnabled = !collideEnabled;
+  collideToggle.classList.toggle('active');
+});
+
+bounceToggle.addEventListener('click', () => {
+  bounceEnabled = !bounceEnabled;
+  bounceToggle.classList.toggle('active');
+});
+
+// ─── Sliders ────────────────────────────────────────────────────────────────
+sizeSlider.addEventListener('input', () => { sizeValue.textContent = sizeSlider.value; });
+speedSlider.addEventListener('input', () => { speedValue.textContent = speedSlider.value; });
+gravitySlider.addEventListener('input', () => { gravityValue.textContent = (gravitySlider.value / 10).toFixed(1); });
+windSlider.addEventListener('input', () => { windValue.textContent = (windSlider.value / 10).toFixed(1); });
+
+// ─── Buttons ────────────────────────────────────────────────────────────────
+spawnBtn.addEventListener('click', () => {
+  const cx = Math.random() * W * 0.6 + W * 0.2;
+  const cy = Math.random() * H * 0.6 + H * 0.2;
+  spawnParticles(cx, cy, 20);
+});
+
+emitBtn.addEventListener('click', () => { burstParticles(50); });
+clearBtn.addEventListener('click', () => { particles = []; updateCount(); });
+
+// ─── Init ───────────────────────────────────────────────────────────────────
+// Start with a few particles
+for (let i = 0; i < 60; i++) {
+  const x = Math.random() * W * 0.8 + W * 0.1;
+  const y = Math.random() * H * 0.8 + H * 0.1;
+  const colors = ['#ff8800', '#ffcc00', '#66ff88', '#4488ff', '#ff00cc', '#00ffff'];
+  particles.push(createParticle(
+    x, y,
+    (Math.random() - 0.5) * 4,
+    (Math.random() - 0.5) * 4,
+    Math.random() * 4 + 3,
+    colors[Math.floor(Math.random() * colors.length)],
+  ));
+}
+updateCount();
+animId = requestAnimationFrame(loop);
+</script>
+</body>
+</html>

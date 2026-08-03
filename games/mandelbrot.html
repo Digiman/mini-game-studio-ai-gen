@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mandelbrot Explorer</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #08080e;
+    color: #e0e0e0;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 16px;
+  }
+
+  .container {
+    text-align: center;
+    max-width: 680px;
+    width: 100%;
+  }
+
+  h1 {
+    font-size: 1.4rem;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, #ff00cc, #ff6600, #ffcc00, #00ffcc, #6600ff);
+    background-size: 300% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmer 6s ease-in-out infinite;
+    margin-bottom: 2px;
+  }
+  @keyframes shimmer {
+    0% { background-position: 0% center; }
+    50% { background-position: 100% center; }
+    100% { background-position: 0% center; }
+  }
+
+  .subtitle {
+    font-size: 0.7rem;
+    color: #555;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+  }
+
+  .canvas-wrapper {
+    position: relative;
+    background: #0a0a14;
+    border-radius: 12px;
+    padding: 5px;
+    box-shadow: 0 0 50px rgba(255, 0, 204, 0.05), 0 0 80px rgba(0, 255, 204, 0.03);
+    margin-bottom: 8px;
+  }
+
+  canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1 / 1;
+    border-radius: 8px;
+    cursor: grab;
+    touch-action: none;
+  }
+  canvas:active { cursor: grabbing; }
+  canvas.zooming { cursor: crosshair; }
+
+  .hud-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 3px 4px 0 4px;
+    font-size: 0.75rem;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .hud-left, .hud-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .hud-label {
+    color: #555;
+    font-size: 0.55rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .hud-value {
+    font-size: 0.8rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: #aaa;
+  }
+  .hud-zoom .hud-value { color: #ffcc00; }
+  .hud-pos .hud-value { color: #66ffcc; }
+  .hud-iters .hud-value { color: #ff66cc; }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    margin: 6px 0 6px 0;
+  }
+
+  .btn {
+    padding: 6px 14px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: transform 0.1s, box-shadow 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .btn:active { transform: scale(0.95); }
+  .btn-reset { background: #ff3344; color: #fff; }
+  .btn-reset:hover { box-shadow: 0 0 16px rgba(255,51,68,0.4); }
+  .btn-colors { background: #6600ff; color: #fff; }
+  .btn-colors:hover { box-shadow: 0 0 16px rgba(102,0,255,0.4); }
+  .btn-zoom { background: #ff8800; color: #0a0a12; }
+  .btn-zoom:hover { box-shadow: 0 0 16px rgba(255,136,0,0.4); }
+  .btn-export { background: #00cc88; color: #0a0a12; }
+  .btn-export:hover { box-shadow: 0 0 16px rgba(0,204,136,0.4); }
+
+  .controls-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+  .controls-row label {
+    font-size: 0.7rem;
+    color: #888;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  input[type="range"] {
+    width: 60px;
+    accent-color: #ff6600;
+    vertical-align: middle;
+  }
+
+  .key-hint {
+    font-size: 0.55rem;
+    color: #444;
+    margin-top: 4px;
+  }
+  .key-hint kbd {
+    background: #14142a;
+    padding: 1px 5px;
+    border-radius: 3px;
+    border: 1px solid #333;
+    font-family: inherit;
+    color: #777;
+  }
+
+  @media (max-width: 500px) {
+    .btn { font-size: 0.65rem; padding: 5px 10px; }
+    .hud-bar { font-size: 0.65rem; }
+    .hud-value { font-size: 0.7rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>🌀 Mandelbrot Explorer</h1>
+  <p class="subtitle">Pan · zoom · explore the infinite fractal</p>
+
+  <div class="canvas-wrapper">
+    <canvas id="canvas" width="600" height="600"></canvas>
+  </div>
+
+  <div class="hud-bar">
+    <div class="hud-left">
+      <div class="hud-pos">
+        <div class="hud-label">Center</div>
+        <div class="hud-value" id="posDisplay">0.0000 + 0.0000i</div>
+      </div>
+    </div>
+    <div class="hud-right">
+      <div class="hud-zoom">
+        <div class="hud-label">Zoom</div>
+        <div class="hud-value" id="zoomDisplay">1.0×</div>
+      </div>
+      <div class="hud-iters">
+        <div class="hud-label">Max Iter</div>
+        <div class="hud-value" id="iterDisplay">100</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="btn btn-reset" id="resetBtn">⟲ Reset View</button>
+    <button class="btn btn-colors" id="paletteBtn">🎨 Cycle Palette</button>
+    <button class="btn btn-zoom" id="zoomInBtn">🔍 +</button>
+    <button class="btn btn-zoom" id="zoomOutBtn">🔍 −</button>
+    <button class="btn btn-export" id="exportBtn">⬇ PNG</button>
+  </div>
+
+  <div class="controls-row">
+    <label>
+      Max Iterations
+      <input type="range" id="iterSlider" min="20" max="1000" value="100">
+      <span id="iterValue">100</span>
+    </label>
+    <label>
+      Color Speed
+      <input type="range" id="colorSpeedSlider" min="1" max="20" value="8">
+    </label>
+  </div>
+
+  <div class="key-hint">
+    <kbd>Drag</kbd> pan · <kbd>Scroll</kbd> zoom · <kbd>Click</kbd> center+zoom · <kbd>R</kbd> reset · <kbd>P</kbd> palette · <kbd>+</kbd> <kbd>-</kbd> zoom
+  </div>
+</div>
+
+<script>
+// ─── Canvas ─────────────────────────────────────────────────────────────────
+const W = 600, H = 600;
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+// ─── DOM refs ───────────────────────────────────────────────────────────────
+const posDisplay = document.getElementById('posDisplay');
+const zoomDisplay = document.getElementById('zoomDisplay');
+const iterDisplay = document.getElementById('iterDisplay');
+const resetBtn = document.getElementById('resetBtn');
+const paletteBtn = document.getElementById('paletteBtn');
+const zoomInBtn = document.getElementById('zoomInBtn');
+const zoomOutBtn = document.getElementById('zoomOutBtn');
+const exportBtn = document.getElementById('exportBtn');
+const iterSlider = document.getElementById('iterSlider');
+const iterValue = document.getElementById('iterValue');
+const colorSpeedSlider = document.getElementById('colorSpeedSlider');
+
+// ─── Viewport ───────────────────────────────────────────────────────────────
+// The Mandelbrot set spans roughly [-2.5, 1] on real, [-1.2, 1.2] on imag
+let view = {
+  minR: -2.5,
+  maxR: 1.0,
+  minI: -1.2,
+  maxI: 1.2,
+};
+
+function getZoom() {
+  const spanR = view.maxR - view.minR;
+  const initialSpan = 3.5; // -2.5 to 1.0
+  return initialSpan / spanR;
+}
+
+function getCenter() {
+  return {
+    r: (view.minR + view.maxR) / 2,
+    i: (view.minI + view.maxI) / 2,
+  };
+}
+
+function updateHUD() {
+  const center = getCenter();
+  const zoom = getZoom();
+  posDisplay.textContent = `${center.r.toFixed(6)} ${center.i >= 0 ? '+' : '-'} ${Math.abs(center.i).toFixed(6)}i`;
+  zoomDisplay.textContent = zoom >= 1e6
+    ? `${(zoom / 1e6).toFixed(2)}M×`
+    : zoom >= 1000
+      ? `${(zoom / 1000).toFixed(2)}K×`
+      : `${zoom.toFixed(1)}×`;
+  const maxIter = parseInt(iterSlider.value, 10);
+  iterDisplay.textContent = maxIter;
+  iterValue.textContent = maxIter;
+}
+
+// ─── Rendering State ────────────────────────────────────────────────────────
+let imageData = null;
+let renderPending = false;
+let renderRequested = false;
+
+// ─── Color Palettes ─────────────────────────────────────────────────────────
+const PALETTES = [
+  // Psychedelic rainbow
+  { name: 'Rainbow', colors: [
+    [0,0,0], [0,0,64], [0,0,128], [0,64,192], [0,128,255],
+    [0,200,200], [0,255,128], [64,255,64], [128,255,0], [200,200,0],
+    [255,200,0], [255,128,0], [255,64,0], [255,0,64], [255,0,128],
+    [255,0,200], [200,0,255], [128,0,255], [64,0,200], [0,0,128],
+  ]},
+  // Fire & Ice
+  { name: 'Fire & Ice', colors: [
+    [0,0,0], [8,0,16], [16,0,48], [64,0,64], [128,0,32],
+    [200,20,0], [255,80,0], [255,160,0], [255,220,80], [255,255,160],
+    [255,255,255], [200,240,255], [128,200,255], [64,128,255], [0,64,255],
+    [0,0,200], [0,0,128], [0,0,64], [0,0,32], [0,0,0],
+  ]},
+  // Electric
+  { name: 'Electric', colors: [
+    [0,0,0], [0,0,32], [0,0,128], [64,0,255], [128,0,255],
+    [255,0,255], [255,0,128], [255,0,0], [255,64,0], [255,200,0],
+    [255,255,0], [200,255,0], [128,255,0], [0,255,0], [0,255,128],
+    [0,255,255], [0,128,255], [0,64,255], [0,0,200], [0,0,64],
+  ]},
+  // Deep Space
+  { name: 'Deep Space', colors: [
+    [0,0,0], [2,0,10], [4,0,24], [10,0,48], [20,0,80],
+    [40,10,100], [60,20,120], [80,40,140], [100,60,160], [120,80,180],
+    [140,100,200], [100,120,200], [60,140,200], [30,160,180], [10,180,160],
+    [5,140,120], [2,100,80], [0,60,60], [0,30,40], [0,10,20],
+  ]},
+  // Neon Dream
+  { name: 'Neon Dream', colors: [
+    [0,0,0], [10,0,30], [30,0,80], [80,0,120], [140,0,180],
+    [255,0,255], [255,0,128], [255,64,0], [255,200,0], [200,255,0],
+    [0,255,128], [0,255,255], [0,128,255], [64,0,255], [128,0,255],
+    [200,0,200], [255,0,128], [255,64,64], [255,128,0], [255,200,100],
+  ]},
+];
+
+let currentPaletteIdx = 0;
+let currentPalette = PALETTES[0].colors;
+
+// ─── Mandelbrot Computation ─────────────────────────────────────────────────
+function mandelbrot(cr, ci, maxIter) {
+  let zr = 0, zi = 0;
+  let zr2 = 0, zi2 = 0;
+  let iter = 0;
+
+  // Pre-escape check for the main cardioid and bulb for speed
+  // Period-2 bulb
+  const p = Math.sqrt((cr - 0.25) * (cr - 0.25) + ci * ci);
+  if (cr < p - 2 * p * p + 0.25) return -1;
+  // Main cardioid
+  const q = (cr + 1) * (cr + 1) + ci * ci;
+  if (q < 0.0625) return -1;
+
+  for (; iter < maxIter; iter++) {
+    zi = 2 * zr * zi + ci;
+    zr = zr2 - zi2 + cr;
+    zr2 = zr * zr;
+    zi2 = zi * zi;
+    if (zr2 + zi2 > 4) break;
+  }
+
+  if (iter === maxIter) return -1; // in the set
+
+  // Smooth iteration count
+  const log_zn = Math.log(zr2 + zi2) / 2;
+  const nu = Math.log(log_zn / Math.LN2) / Math.LN2;
+  return iter + 1 - nu;
+}
+
+function getColor(smoothIter, maxIter, palette, colorSpeed) {
+  if (smoothIter < 0) {
+    // Inside the set — black
+    return [0, 0, 0];
+  }
+
+  const t = (smoothIter / maxIter) * colorSpeed;
+  const idx = t % 1;
+  const paletteLen = palette.length;
+  const pos = (t % paletteLen + paletteLen) % paletteLen;
+  const i1 = Math.floor(pos) % paletteLen;
+  const i2 = (i1 + 1) % paletteLen;
+  const frac = pos - Math.floor(pos);
+
+  const c1 = palette[i1];
+  const c2 = palette[i2];
+
+  return [
+    Math.round(c1[0] + (c2[0] - c1[0]) * frac),
+    Math.round(c1[1] + (c2[1] - c1[1]) * frac),
+    Math.round(c1[2] + (c2[2] - c1[2]) * frac),
+  ];
+}
+
+// ─── Render ─────────────────────────────────────────────────────────────────
+function render() {
+  if (renderPending) {
+    renderRequested = true;
+    return;
+  }
+  renderPending = true;
+
+  const maxIter = parseInt(iterSlider.value, 10);
+  const colorSpeed = parseInt(colorSpeedSlider.value, 10);
+  const palette = currentPalette;
+  const imgData = ctx.createImageData(W, H);
+  const data = imgData.data;
+
+  const spanR = view.maxR - view.minR;
+  const spanI = view.maxI - view.minI;
+
+  // Render in chunks for responsiveness
+  const chunkSize = 30;
+  let y = 0;
+
+  function renderChunk() {
+    const endY = Math.min(y + chunkSize, H);
+
+    for (let py = y; py < endY; py++) {
+      for (let px = 0; px < W; px++) {
+        const cr = view.minR + (px / W) * spanR;
+        const ci = view.minI + (py / H) * spanI;
+        const smoothIter = mandelbrot(cr, ci, maxIter);
+        const [r, g, b] = getColor(smoothIter, maxIter, palette, colorSpeed);
+        const idx = (py * W + px) * 4;
+        data[idx]     = r;
+        data[idx + 1] = g;
+        data[idx + 2] = b;
+        data[idx + 3] = 255;
+      }
+    }
+
+    y = endY;
+
+    if (y < H) {
+      requestAnimationFrame(renderChunk);
+    } else {
+      ctx.putImageData(imgData, 0, 0);
+      imageData = imgData;
+      renderPending = false;
+      updateHUD();
+
+      if (renderRequested) {
+        renderRequested = false;
+        render();
+      }
+    }
+  }
+
+  requestAnimationFrame(renderChunk);
+}
+
+// ─── Pan & Zoom ─────────────────────────────────────────────────────────────
+let isDragging = false;
+let dragStartX = 0, dragStartY = 0;
+let dragViewMinR = 0, dragViewMaxR = 0, dragViewMinI = 0, dragViewMaxI = 0;
+
+function pixelToComplex(px, py) {
+  const spanR = view.maxR - view.minR;
+  const spanI = view.maxI - view.minI;
+  return {
+    r: view.minR + (px / W) * spanR,
+    i: view.minI + (py / H) * spanI,
+  };
+}
+
+function zoomAt(px, py, factor) {
+  const c = pixelToComplex(px, py);
+  const spanR = view.maxR - view.minR;
+  const spanI = view.maxI - view.minI;
+
+  const newSpanR = spanR * factor;
+  const newSpanI = spanI * factor;
+
+  view.minR = c.r - (c.r - view.minR) * factor;
+  view.maxR = view.minR + newSpanR;
+  view.minI = c.i - (c.i - view.minI) * factor;
+  view.maxI = view.minI + newSpanI;
+
+  updateHUD();
+  render();
+}
+
+function zoomToRect(x1, y1, x2, y2) {
+  const c1 = pixelToComplex(Math.min(x1, x2), Math.min(y1, y2));
+  const c2 = pixelToComplex(Math.max(x1, x2), Math.max(y1, y2));
+
+  view.minR = c1.r;
+  view.maxR = c2.r;
+  view.minI = c1.i;
+  view.maxI = c2.i;
+
+  updateHUD();
+  render();
+}
+
+// ─── Mouse Events ───────────────────────────────────────────────────────────
+function getCanvasPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  return {
+    x: (clientX - rect.left) * scaleX,
+    y: (clientY - rect.top) * scaleY,
+  };
+}
+
+canvas.addEventListener('mousedown', (e) => {
+  const pos = getCanvasPos(e);
+  isDragging = true;
+  dragStartX = pos.x;
+  dragStartY = pos.y;
+  dragViewMinR = view.minR;
+  dragViewMaxR = view.maxR;
+  dragViewMinI = view.minI;
+  dragViewMaxI = view.maxI;
+  canvas.classList.add('zooming');
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  if (!isDragging) return;
+  const pos = getCanvasPos(e);
+  const dx = (pos.x - dragStartX) / W;
+  const dy = (pos.y - dragStartY) / H;
+  const spanR = dragViewMaxR - dragViewMinR;
+  const spanI = dragViewMaxI - dragViewMinI;
+  view.minR = dragViewMinR - dx * spanR;
+  view.maxR = dragViewMaxR - dx * spanR;
+  view.minI = dragViewMinI - dy * spanI;
+  view.maxI = dragViewMaxI - dy * spanI;
+  // Live preview with low-res render
+  render();
+});
+
+canvas.addEventListener('mouseup', (e) => {
+  const pos = getCanvasPos(e);
+  const dist = Math.hypot(pos.x - dragStartX, pos.y - dragStartY);
+  isDragging = false;
+  canvas.classList.remove('zooming');
+
+  if (dist < 5) {
+    // Click — zoom in 2× at that point
+    zoomAt(pos.x, pos.y, 0.5);
+  }
+});
+
+canvas.addEventListener('mouseleave', () => {
+  isDragging = false;
+  canvas.classList.remove('zooming');
+});
+
+canvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const pos = getCanvasPos(e);
+  const factor = e.deltaY < 0 ? 0.85 : 1.18;
+  zoomAt(pos.x, pos.y, factor);
+}, { passive: false });
+
+// ─── Touch Events ───────────────────────────────────────────────────────────
+let touchStartDist = 0;
+let touchStartView = null;
+
+canvas.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  if (e.touches.length === 1) {
+    const pos = getCanvasPos(e);
+    isDragging = true;
+    dragStartX = pos.x;
+    dragStartY = pos.y;
+    dragViewMinR = view.minR;
+    dragViewMaxR = view.maxR;
+    dragViewMinI = view.minI;
+    dragViewMaxI = view.maxI;
+  } else if (e.touches.length === 2) {
+    // Pinch to zoom
+    const t1 = e.touches[0], t2 = e.touches[1];
+    touchStartDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+    touchStartView = { ...view };
+  }
+}, { passive: false });
+
+canvas.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  if (e.touches.length === 1 && isDragging) {
+    const pos = getCanvasPos(e);
+    const dx = (pos.x - dragStartX) / W;
+    const dy = (pos.y - dragStartY) / H;
+    const spanR = dragViewMaxR - dragViewMinR;
+    const spanI = dragViewMaxI - dragViewMinI;
+    view.minR = dragViewMinR - dx * spanR;
+    view.maxR = dragViewMaxR - dx * spanR;
+    view.minI = dragViewMinI - dy * spanI;
+    view.maxI = dragViewMaxI - dy * spanI;
+    render();
+  } else if (e.touches.length === 2 && touchStartView) {
+    const t1 = e.touches[0], t2 = e.touches[1];
+    const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+    const scale = touchStartDist / dist;
+    const centerX = W / 2, centerY = H / 2;
+
+    const spanR = touchStartView.maxR - touchStartView.minR;
+    const spanI = touchStartView.maxI - touchStartView.minI;
+    const cR = (touchStartView.maxR + touchStartView.minR) / 2;
+    const cI = (touchStartView.maxI + touchStartView.minI) / 2;
+
+    view.minR = cR - (spanR / 2) * scale;
+    view.maxR = cR + (spanR / 2) * scale;
+    view.minI = cI - (spanI / 2) * scale;
+    view.maxI = cI + (spanI / 2) * scale;
+    render();
+  }
+}, { passive: false });
+
+canvas.addEventListener('touchend', (e) => {
+  e.preventDefault();
+  if (e.touches.length === 0) {
+    if (isDragging) {
+      const pos = getCanvasPos(e);
+      const dist = Math.hypot(pos.x - dragStartX, pos.y - dragStartY);
+      if (dist < 5) {
+        zoomAt(pos.x, pos.y, 0.5);
+      }
+    }
+    isDragging = false;
+    touchStartView = null;
+  }
+}, { passive: false });
+
+// ─── Keyboard ───────────────────────────────────────────────────────────────
+document.addEventListener('keydown', (e) => {
+  const key = e.key.toLowerCase();
+  if (key === 'r') resetView();
+  else if (key === 'p') cyclePalette();
+  else if (key === '=' || key === '+') { zoomInBtn.click(); e.preventDefault(); }
+  else if (key === '-') { zoomOutBtn.click(); e.preventDefault(); }
+});
+
+// ─── Actions ────────────────────────────────────────────────────────────────
+function resetView() {
+  view.minR = -2.5;
+  view.maxR = 1.0;
+  view.minI = -1.2;
+  view.maxI = 1.2;
+  updateHUD();
+  render();
+}
+
+function cyclePalette() {
+  currentPaletteIdx = (currentPaletteIdx + 1) % PALETTES.length;
+  currentPalette = PALETTES[currentPaletteIdx].colors;
+  paletteBtn.textContent = `🎨 ${PALETTES[currentPaletteIdx].name}`;
+  render();
+}
+
+resetBtn.addEventListener('click', resetView);
+paletteBtn.addEventListener('click', cyclePalette);
+zoomInBtn.addEventListener('click', () => zoomAt(W / 2, H / 2, 0.5));
+zoomOutBtn.addEventListener('click', () => zoomAt(W / 2, H / 2, 2));
+
+exportBtn.addEventListener('click', () => {
+  const link = document.createElement('a');
+  link.download = `mandelbrot-${getZoom().toFixed(1)}x.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+});
+
+// ─── Sliders ────────────────────────────────────────────────────────────────
+let sliderTimeout = null;
+iterSlider.addEventListener('input', () => {
+  iterValue.textContent = iterSlider.value;
+  iterDisplay.textContent = iterSlider.value;
+  clearTimeout(sliderTimeout);
+  sliderTimeout = setTimeout(render, 200);
+});
+colorSpeedSlider.addEventListener('change', render);
+
+// ─── Init ───────────────────────────────────────────────────────────────────
+paletteBtn.textContent = `🎨 ${PALETTES[0].name}`;
+updateHUD();
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pong / Breakout</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif; background: #0a0a12; color: #e0e0e0;
+    min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 16px;
+  }
+  .container { max-width: 560px; width: 100%; text-align: center; }
+  h1 {
+    font-size: 1.4rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;
+    background: linear-gradient(90deg, #00ffff, #ff8800, #ff00cc);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 2px;
+  }
+  .subtitle { font-size: 0.7rem; color: #555; margin-bottom: 8px; letter-spacing: 1px; }
+  .game-wrapper { background: #0d0d1a; border-radius: 12px; padding: 6px; margin-bottom: 8px; position: relative; }
+  canvas { display: block; width: 100%; aspect-ratio: 600/400; border-radius: 8px; background: #08080f; }
+  .hud { display: flex; justify-content: space-between; padding: 4px 4px 0; font-size: 0.8rem; }
+  .hud-label { color: #555; font-size: 0.6rem; text-transform: uppercase; letter-spacing: 1px; }
+  .hud-value { font-size: 1rem; font-weight: 700; }
+  .hud-score .hud-value { color: #ffcc00; }
+  .hud-lives .hud-value { color: #ff4466; }
+  .hud-high .hud-value { color: #00ffff; }
+  .controls { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 6px 0; }
+  .btn {
+    padding: 6px 14px; border: none; border-radius: 8px; font-size: 0.75rem; font-weight: 700; cursor: pointer;
+    text-transform: uppercase; letter-spacing: 0.5px; transition: transform 0.1s, box-shadow 0.2s;
+  }
+  .btn:active { transform: scale(0.95); }
+  .btn-start { background: #66ff88; color: #0a0a12; }
+  .btn-start:hover { box-shadow: 0 0 16px rgba(102,255,136,0.4); }
+  .btn-mode { background: #6600ff; color: #fff; }
+  .btn-mode:hover { box-shadow: 0 0 16px rgba(102,0,255,0.4); }
+  .overlay {
+    position: absolute; inset: 6px; border-radius: 8px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; background: rgba(8,8,15,0.85);
+    opacity: 0; pointer-events: none; transition: opacity 0.4s; z-index: 10;
+  }
+  .overlay.active { opacity: 1; pointer-events: all; }
+  .overlay h2 { font-size: 2rem; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 4px; }
+  .overlay .go-title { background: linear-gradient(90deg, #ff3344, #ff8800); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .overlay .start-title { background: linear-gradient(90deg, #00ffff, #66ff88); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .overlay p { color: #888; font-size: 0.9rem; margin-bottom: 12px; }
+  .overlay p span { color: #ffcc00; font-weight: 700; }
+  .key-hint { font-size: 0.55rem; color: #444; margin-top: 4px; }
+  .key-hint kbd { background: #14142a; padding: 1px 5px; border-radius: 3px; border: 1px solid #333; font-family: inherit; color: #777; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🏓 Pong / Breakout</h1>
+  <p class="subtitle">Two classic arcade games in one</p>
+  <div class="game-wrapper">
+    <canvas id="canvas" width="600" height="400"></canvas>
+    <div class="overlay active" id="startOverlay">
+      <h2 class="start-title">▶ Start</h2>
+      <p>Click to play · <kbd>←</kbd> <kbd>→</kbd> move</p>
+      <button class="btn btn-start" id="startBtn">Start Game</button>
+    </div>
+    <div class="overlay" id="gameOverOverlay">
+      <h2 class="go-title">Game Over</h2>
+      <p>Score: <span id="finalScore">0</span></p>
+      <button class="btn btn-start" id="restartBtn">Play Again</button>
+    </div>
+  </div>
+  <div class="hud">
+    <div class="hud-score"><div class="hud-label">Score</div><div class="hud-value" id="scoreDisplay">0</div></div>
+    <div class="hud-lives"><div class="hud-label">Lives</div><div class="hud-value" id="livesDisplay">❤❤❤</div></div>
+    <div class="hud-high"><div class="hud-label">High</div><div class="hud-value" id="highDisplay">0</div></div>
+  </div>
+  <div class="controls">
+    <button class="btn btn-mode" id="modeBtn">🔄 Breakout</button>
+  </div>
+  <div class="key-hint"><kbd>←</kbd> <kbd>→</kbd> move paddle · <kbd>Space</kbd> launch</div>
+</div>
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const W=600, H=400;
+const scoreDisplay = document.getElementById('scoreDisplay');
+const livesDisplay = document.getElementById('livesDisplay');
+const highDisplay = document.getElementById('highDisplay');
+const finalScore = document.getElementById('finalScore');
+const modeBtn = document.getElementById('modeBtn');
+const startOverlay = document.getElementById('startOverlay');
+const gameOverOverlay = document.getElementById('gameOverOverlay');
+const startBtn = document.getElementById('startBtn');
+const restartBtn = document.getElementById('restartBtn');
+
+let mode = 'breakout'; // 'pong' or 'breakout'
+let highScore = parseInt(localStorage.getItem('pong_high')||'0',10);
+highDisplay.textContent = highScore;
+
+let paddle = {x:250, y:380, w:100, h:10};
+let ball = {x:300, y:360, r:6, dx:0, dy:0, speed:5};
+let bricks = [];
+let score = 0, lives = 3, gameRunning = false, launched = false;
+let keys = {left:false, right:false};
+let animId = null;
+
+// Pong AI paddle
+let aiPaddle = {x:250, y:10, w:100, h:10};
+
+function initGame() {
+  score = 0; lives = 3; launched = false;
+  scoreDisplay.textContent = '0'; updateLives();
+  paddle.x = 250; paddle.y = 380;
+  ball.x = 300; ball.y = 360; ball.dx = 0; ball.dy = 0; ball.speed = 5;
+  aiPaddle.x = 250;
+  if (mode === 'breakout') {
+    bricks = [];
+    for (let r = 0; r < 5; r++)
+      for (let c = 0; c < 10; c++)
+        bricks.push({x:c*60+2, y:r*20+25, w:56, h:16, alive:true, color:`hsl(${r*40+200},80%,${60-r*8}%)`});
+  } else {
+    bricks = [];
+  }
+  gameOverOverlay.classList.remove('active');
+  startOverlay.classList.remove('active');
+  gameRunning = true;
+  if (animId) cancelAnimationFrame(animId);
+  loop();
+}
+
+function launchBall() {
+  if (launched) return;
+  launched = true;
+  const angle = -Math.PI/2 + (Math.random()-0.5)*1.0;
+  ball.dx = Math.cos(angle) * ball.speed;
+  ball.dy = Math.sin(angle) * ball.speed;
+}
+
+function updateLives() {
+  livesDisplay.textContent = '❤'.repeat(Math.max(0,lives));
+}
+
+function gameOver() {
+  gameRunning = false;
+  finalScore.textContent = score;
+  if (score > highScore) {
+    highScore = score;
+    localStorage.setItem('pong_high', String(highScore));
+    highDisplay.textContent = highScore;
+  }
+  gameOverOverlay.classList.add('active');
+}
+
+function loop() {
+  if (!gameRunning) { animId = requestAnimationFrame(loop); return; }
+  // Paddle movement
+  if (keys.left) paddle.x = Math.max(0, paddle.x - 6);
+  if (keys.right) paddle.x = Math.min(W-paddle.w, paddle.x + 6);
+
+  if (mode === 'pong') {
+    // AI paddle follows ball
+    const target = ball.x - aiPaddle.w/2;
+    aiPaddle.x += (target - aiPaddle.x) * 0.06;
+    aiPaddle.x = Math.max(0, Math.min(W-aiPaddle.w, aiPaddle.x));
+  }
+
+  if (launched) {
+    ball.x += ball.dx;
+    ball.y += ball.dy;
+
+    // Wall bounce
+    if (ball.x - ball.r < 0 || ball.x + ball.r > W) ball.dx = -ball.dx;
+    if (ball.y - ball.r < 0) { ball.dy = -ball.dy; if (mode === 'pong') ball.dy = Math.abs(ball.dy); }
+
+    // Bottom
+    if (ball.y + ball.r > H) {
+      if (mode === 'breakout') {
+        lives--; updateLives();
+        if (lives <= 0) { gameOver(); draw(); return; }
+        ball.x = 300; ball.y = 360; launched = false;
+        ball.dx = 0; ball.dy = 0;
+      } else {
+        // Pong — AI scores
+        score = Math.max(0, score - 1); scoreDisplay.textContent = score;
+        ball.x = 300; ball.y = 360; launched = false;
+        ball.dx = 0; ball.dy = 0;
+      }
+    }
+
+    // Top — Pong player scores
+    if (mode === 'pong' && ball.y - ball.r < 0) {
+      score += 10; scoreDisplay.textContent = score;
+      ball.x = 300; ball.y = 200; launched = false;
+      ball.dx = 0; ball.dy = 0;
+    }
+
+    // Paddle collision
+    if (ball.dy > 0 && ball.y + ball.r > paddle.y && ball.y + ball.r < paddle.y + paddle.h + 5 &&
+        ball.x > paddle.x - ball.r && ball.x < paddle.x + paddle.w + ball.r) {
+      ball.dy = -ball.dy;
+      const hit = (ball.x - paddle.x) / paddle.w - 0.5;
+      ball.dx = hit * 2.5;
+      ball.y = paddle.y - ball.r;
+      ball.speed = Math.min(8, ball.speed + 0.1);
+      const mag = Math.hypot(ball.dx, ball.dy);
+      ball.dx = ball.dx / mag * ball.speed;
+      ball.dy = -Math.abs(ball.dy / mag * ball.speed);
+    }
+
+    // Pong AI paddle collision
+    if (mode === 'pong' && ball.dy < 0 && ball.y - ball.r < aiPaddle.y + aiPaddle.h &&
+        ball.y - ball.r > aiPaddle.y - 5 && ball.x > aiPaddle.x - ball.r && ball.x < aiPaddle.x + aiPaddle.w + ball.r) {
+      ball.dy = Math.abs(ball.dy);
+      const hit = (ball.x - aiPaddle.x) / aiPaddle.w - 0.5;
+      ball.dx = hit * 2.5;
+    }
+
+    // Brick collision
+    if (mode === 'breakout') {
+      for (const b of bricks) {
+        if (!b.alive) continue;
+        if (ball.x + ball.r > b.x && ball.x - ball.r < b.x + b.w &&
+            ball.y + ball.r > b.y && ball.y - ball.r < b.y + b.h) {
+          b.alive = false;
+          ball.dy = -ball.dy;
+          score += 10; scoreDisplay.textContent = score;
+          ball.speed = Math.min(8, ball.speed + 0.05);
+          break;
+        }
+      }
+      if (bricks.every(b => !b.alive)) {
+        // Win - next level
+        score += 50; scoreDisplay.textContent = score;
+        ball.x = 300; ball.y = 360; launched = false;
+        ball.dx = 0; ball.dy = 0; ball.speed = 5;
+        for (const b of bricks) {
+          b.alive = true;
+          b.y += 20;
+          if (b.y + b.h > 200) { b.y = 25 + (Math.random()*100|0); }
+        }
+      }
+    }
+  }
+
+  draw();
+  animId = requestAnimationFrame(loop);
+}
+
+function draw() {
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle = '#08080f';
+  ctx.fillRect(0,0,W,H);
+
+  // Bricks
+  for (const b of bricks) {
+    if (!b.alive) continue;
+    ctx.fillStyle = b.color;
+    ctx.shadowColor = b.color; ctx.shadowBlur = 6;
+    ctx.fillRect(b.x, b.y, b.w, b.h);
+    ctx.shadowBlur = 0;
+  }
+
+  // Paddle
+  ctx.shadowColor = '#00ffff'; ctx.shadowBlur = 12;
+  ctx.fillStyle = '#00ffff';
+  ctx.beginPath(); ctx.roundRect(paddle.x, paddle.y, paddle.w, paddle.h, 4); ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // AI Paddle (Pong)
+  if (mode === 'pong') {
+    ctx.shadowColor = '#ff4466'; ctx.shadowBlur = 12;
+    ctx.fillStyle = '#ff4466';
+    ctx.beginPath(); ctx.roundRect(aiPaddle.x, aiPaddle.y, aiPaddle.w, aiPaddle.h, 4); ctx.fill();
+    ctx.shadowBlur = 0;
+    // Center line
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.setLineDash([6,6]);
+    ctx.beginPath(); ctx.moveTo(0,200); ctx.lineTo(W,200); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Ball
+  ctx.shadowColor = '#ffcc00'; ctx.shadowBlur = 14;
+  ctx.fillStyle = '#ffcc00';
+  ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2); ctx.fill();
+  ctx.shadowBlur = 0;
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowLeft') { e.preventDefault(); keys.left = true; }
+  if (e.key === 'ArrowRight') { e.preventDefault(); keys.right = true; }
+  if (e.key === ' ') { e.preventDefault(); if (gameRunning) launchBall(); }
+});
+document.addEventListener('keyup', (e) => {
+  if (e.key === 'ArrowLeft') keys.left = false;
+  if (e.key === 'ArrowRight') keys.right = false;
+});
+
+modeBtn.addEventListener('click', () => {
+  mode = mode === 'breakout' ? 'pong' : 'breakout';
+  modeBtn.textContent = mode === 'breakout' ? '🔄 Pong' : '🔄 Breakout';
+  gameRunning = false;
+  startOverlay.classList.add('active');
+  gameOverOverlay.classList.remove('active');
+});
+
+startBtn.addEventListener('click', initGame);
+restartBtn.addEventListener('click', initGame);
+
+// Polyfill roundRect
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x,y,w,h,r) {
+    this.moveTo(x+r,y); this.lineTo(x+w-r,y);
+    this.quadraticCurveTo(x+w,y,x+w,y+r);
+    this.lineTo(x+w,y+h-r); this.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+    this.lineTo(x+r,y+h); this.quadraticCurveTo(x,y+h,x,y+h-r);
+    this.lineTo(x,y+r); this.quadraticCurveTo(x,y,x+r,y);
+    this.closePath();
+  };
+}
+
+initGame();
+</script>
+</body>
+</html>
