@@ -1,5 +1,58 @@
 // Auto-generated embedded docs
 const DOCS = {
+  '2048': `# ✚ Neon 2048
+
+A single-file HTML/JS implementation of the classic sliding-tile number puzzle with neon visuals, merge animations, undo, and persistent best score.
+
+## Features
+
+- **4×4 Grid** — slide all tiles each move; matching tiles merge into their sum
+- **Arrow & WASD Controls** — move with arrow keys, WASD, or touch swipes
+- **Merge Animations** — tiles glide and pop when they combine (RAF-based)
+- **Spawn 2/4** — a new random tile appears after every successful move
+- **Undo** — revert your last move (up to 30 moves of history)
+- **Win Detection** — overlay when you reach the 2048 tile, with a "Keep Going" option
+- **Game Over Detection** — detected when no moves remain
+- **Persistent Best Score** — saved to \`localStorage\`
+- **Neon Tile Colors** — tiles glow brighter as their value increases
+
+## Controls
+
+| Key | Action |
+|---|---|
+| **← ↑ → ↓** or **W A S D** | Slide tiles in that direction |
+| **U** | Undo last move |
+| **R** | Restart game |
+| Swipe (touch) | Slide tiles in the swiped direction |
+
+## Scoring
+
+| Action | Points |
+|---|---|
+| Merge two tiles of value *v* | **2 × v** added to score |
+
+Score increases as tiles combine. Higher merges award larger sums.
+
+## Tech Stack
+
+- **Language**: Vanilla JavaScript (ES6)
+- **Rendering**: Canvas 2D API
+- **Dependencies**: None — single self-contained HTML file
+- **Storage**: \`localStorage\` for best score
+
+## File
+
+\`\`\`
+games/2048.html
+\`\`\`
+
+## Possible Enhancements
+
+- Slide-whole-board ghost movement preview
+- 4×4 → 5×5 / 6×6 grid size options
+- Tween polish (gravity, haptic feedback on mobile)
+- Shareable score / best-score leaderboard
+`,
   'asteroid-shooter': `# ☄️ Asteroid Shooter
 
 A single-file HTML/JS arcade game where you pilot a ship through an asteroid field, blasting rocks that break apart into smaller pieces. Inspired by the classic Asteroids (1979).
@@ -815,6 +868,61 @@ Push-box puzzle game with 5 levels, undo support, and keyboard controls.
 \`\`\`
 C:\\AI\\Projects\\Test1\\games\\sokoban.html
 \`\`\``,
+  'space-invaders': `# 👾 Neon Space Invaders
+
+A single-file HTML/JS implementation of the classic retro fixed-canvas shooter with neon visuals, breakable shields, UFO bonuses, and progressive waves.
+
+## Features
+
+- **Invader Formation** — 11×5 grid of invaders with distinct sprite variants and animated legs
+- **Edge Bounce & Step Down** — the formation sweeps side to side and drops when it hits the walls
+- **Breakable Shields** — 4 neon shields that erode as bullets hit them (3 damage states)
+- **UFO Bonus** — a flying saucer crosses the top for bonus points
+- **Progressive Waves** — enemies speed up and fire more aggressively each wave
+- **Player Ship** — move with arrows/touch and hold to auto-fire
+- **Neon Explosion Particles** — every hit bursts into glowing particles
+- **3 Lives** — lose a life when shot or when the formation reaches the player
+- **Persistent High Score** — saved to \`localStorage\`
+
+## Controls
+
+| Key | Action |
+|---|---|
+| **← →** or **A D** | Move player ship |
+| **Space** | Fire (hold for auto-fire) |
+| **P** / **Esc** | Pause / resume |
+| **R** | Restart |
+| Touch drag | Move ship; touch to fire |
+
+## Scoring
+
+| Target | Points |
+|---|---|
+| Bottom-row invader | 10 |
+| Middle-row invader | 20 |
+| Top-row invader | 30 |
+| UFO | 150 + wave bonus |
+
+## Tech Stack
+
+- **Language**: Vanilla JavaScript (ES6)
+- **Rendering**: Canvas 2D API
+- **Dependencies**: None — single self-contained HTML file
+- **Storage**: \`localStorage\` for high score
+
+## File
+
+\`\`\`
+games/space-invaders.html
+\`\`\`
+
+## Possible Enhancements
+
+- Power-ups (double-shot, shields, spread fire)
+- Boss invader encounters every few waves
+- Sound effects via the Web Audio API
+- High-score table across sessions
+`,
   'tetris': `# ⧫ Neon Tetris
 
 A single-file HTML/JS implementation of the classic block-stacking arcade game with neon visuals, ghost piece, hold mechanic, 7-bag shuffle, and progressive speed ramping.
@@ -936,6 +1044,58 @@ games/tower-defense.html
 - Buildable path (place your own route)
 - Speed controls (1× / 2× / 3×)
 - Boss waves and special rewards
+`,
+  'wordle': `# 🟩 Neon Wordle
+
+A single-file HTML/JS implementation of the popular word-guessing game with neon styling, daily and random modes, on-screen and physical keyboards, and persistent stats.
+
+## Features
+
+- **6×5 Grid** — guess the hidden 5-letter word in up to 6 tries
+- **Color Feedback** — green (correct position), yellow (in word, wrong position), gray (not in word)
+- **Daily & Random Modes** — a date-seeded daily word plus unlimited random games
+- **On-Screen & Physical Keyboard** — tap keys or type; keyboard color-codes each letter
+- **Invalid Word Handling** — shaking row animation for non-dictionary guesses
+- **Embedded Word List** — ~700 common 5-letter words, zero dependencies
+- **Stats Tracking** — games played, win %, current & max streak saved to \`localStorage\`
+- **Guess Distribution** — bar chart of solved-in-N tries
+- **Staggered Tile Reveal** — letters flip in sequence with a pop animation
+
+## Controls
+
+| Key | Action |
+|---|---|
+| **A–Z** | Type a letter |
+| **Enter** | Submit guess |
+| **Backspace** | Delete last letter |
+| Tap keys (touch) | On-screen keyboard |
+
+## Scoring
+
+| Outcome | Stat |
+|---|---|
+| Solve in N tries (1–6) | Win recorded, streak +1, distribution[N]++ |
+| Fail all 6 tries | Streak reset to 0 |
+
+## Tech Stack
+
+- **Language**: Vanilla JavaScript (ES6)
+- **Rendering**: DOM (grid + keyboard), no canvas required
+- **Dependencies**: None — single self-contained HTML file
+- **Storage**: \`localStorage\` for stats object
+
+## File
+
+\`\`\`
+games/wordle.html
+\`\`\`
+
+## Possible Enhancements
+
+- Hard mode (must use revealed hints)
+- Wider word list and answer-rotation to avoid repeats
+- Audio feedback for correct/incorrect letters
+- Share the result as emoji grid
 `,
 };
 
