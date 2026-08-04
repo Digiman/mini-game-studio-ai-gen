@@ -1,5 +1,7 @@
 # 🎮 Mini Game Studio
 
+[![GitHub Pages](https://img.shields.io/badge/🌐-Live%20Site-ff8800?style=flat-square&logo=github)](https://digiman.github.io/mini-game-studio-ai-gen/)
+
 A collection of **22 single-file HTML/JS games and interactive tools** — no dependencies, no build steps, just open and play. Each project is self-contained in a single `.html` file with full documentation in the `docs/` folder.
 
 ---
@@ -120,6 +122,16 @@ All projects are built with **vanilla JavaScript (ES6)** and the **Canvas 2D API
 1. Clone or download the repository
 2. Open **`index.html`** for the visual catalog, or open any `.html` file from the `games/` folder
 3. That's it — no server, no install, no build
+
+## 🌐 Live Site (GitHub Pages)
+
+The app is published automatically to **GitHub Pages**:
+
+- **URL:** <https://digiman.github.io/mini-game-studio-ai-gen/>
+- Every push to `main` triggers an automatic redeploy (see `.github/workflows/pages.yml`).
+- You can also trigger a manual redeploy from the **Actions** tab → _Deploy to GitHub Pages_ → **Run workflow**.
+
+The published site is this same static repo — `index.html` is the catalog, and every game and its docs are served directly from the `games/` and `docs/` folders.
 
 ## 🤖 How It Was Built
 
