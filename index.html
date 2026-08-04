@@ -230,11 +230,11 @@
   <button class="theme-toggle" id="themeToggle" title="Toggle theme">🌙</button>
   <h1>🎮 Mini Game Studio</h1>
   <p>A collection of single-file HTML/JS games &amp; tools</p>
-  <div class="count"><span id="totalCount">20</span> projects · no dependencies · no build</div>
+  <div class="count"><span id="totalCount">22</span> projects · no dependencies · no build</div>
 </div>
 
 <div class="filter-bar" id="filterBar">
-  <button class="filter-btn active" data-filter="all">All <span class="filter-count" id="countAll">20</span></button>
+  <button class="filter-btn active" data-filter="all">All <span class="filter-count" id="countAll">22</span></button>
   <button class="filter-btn" data-filter="arcade" style="border-color:#00ffff55;color:#00ffff;">Arcade <span class="filter-count" id="countArcade">0</span></button>
   <button class="filter-btn" data-filter="puzzle" style="border-color:#ff880055;color:#ff8800;">Puzzle <span class="filter-count" id="countPuzzle">0</span></button>
   <button class="filter-btn" data-filter="procedural" style="border-color:#ff880055;color:#ff8800;">Procedural <span class="filter-count" id="countProcedural">0</span></button>
@@ -485,6 +485,8 @@
         <a href="docs-viewer.html?game=platformer" class="card-btn card-btn-docs">📄 Docs</a>
       </div>
     </div>
+  </div>
+
   <!-- ─── Neon 2048 ─── -->
   <div class="card" data-category="puzzle">
     <img class="card-image" src="screenshots/2048.png" alt="" loading="lazy">
@@ -527,12 +529,39 @@
     </div>
   </div>
 
+  <!-- ─── Neon Sudoku ─── -->
+  <div class="card" data-category="puzzle">
+    <img class="card-image" src="screenshots/sudoku.png" alt="" loading="lazy">
+    <div class="card-body">
+      <div class="card-title" style="color:#ff8800;">🧩 Neon Sudoku</div>
+      <div class="card-desc">Fill the 9×9 grid with notes, hints, undo, and unique puzzles in 4 difficulties.</div>
+      <div class="card-tags"><span class="card-tag orange">Puzzle</span><span class="card-tag orange">Numbers</span></div>
+      <div class="card-actions">
+        <a href="games/sudoku.html" class="card-btn card-btn-play">▶ Play</a>
+        <a href="docs-viewer.html?game=sudoku" class="card-btn card-btn-docs">📄 Docs</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Neon Bubble Shooter ─── -->
+  <div class="card" data-category="arcade">
+    <img class="card-image" src="screenshots/bubble-shooter.png" alt="" loading="lazy">
+    <div class="card-body">
+      <div class="card-title" style="color:#00ffff;">🫧 Neon Bubble Shooter</div>
+      <div class="card-desc">Aim and shoot to match 3+ bubbles, pop clusters, and drop floating groups.</div>
+      <div class="card-tags"><span class="card-tag cyan">Arcade</span><span class="card-tag cyan">Puzzle</span></div>
+      <div class="card-actions">
+        <a href="games/bubble-shooter.html" class="card-btn card-btn-play">▶ Play</a>
+        <a href="docs-viewer.html?game=bubble-shooter" class="card-btn card-btn-docs">📄 Docs</a>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <div class="footer">
   <a href="https://github.com/yourusername/mini-game-studio" target="_blank" rel="noopener">Mini Game Studio</a>
-  · 20 projects · vanilla JS &amp; Canvas 2D
-  · <a href="README.md">README</a>
+  · 22 projects · vanilla JS &amp; Canvas 2D
 </div>
 
 <script>

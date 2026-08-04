@@ -104,7 +104,7 @@
   </div>
 
   <div class="game-wrapper">
-    <canvas id="board" width="480" height="480"></canvas>
+    <canvas id="board" width="502" height="502"></canvas>
 
     <div class="overlay active" id="startOverlay">
       <h2 class="start-title">▶ 2048</h2>
@@ -144,11 +144,12 @@
 <script>
 // ─── Constants ──────────────────────────────────────────────────────────────
 const SIZE = 4;
-const CELL = 120;          // intrinsic canvas cell size
-const GAP = 10;
-const PAD = 12;
-const W = SIZE * CELL;
-const H = SIZE * CELL;
+const CELL = 110;          // tile size (px, intrinsic canvas units)
+const GAP = 12;            // gap between tiles
+const PAD = 13;            // outer padding around the grid
+const STRIDE = CELL + GAP; // distance between adjacent cell origins
+const W = PAD * 2 + SIZE * CELL + (SIZE - 1) * GAP;  // full board width (square)
+const H = W;
 const WIN_VALUE = 2048;
 
 // Tile colors: neon gradient by exponent
@@ -173,6 +174,8 @@ function tileColor(v) {
 
 // ─── DOM refs ───────────────────────────────────────────────────────────────
 const canvas = document.getElementById('board');
+canvas.width = W;
+canvas.height = H;
 const ctx = canvas.getContext('2d');
 const scoreDisplay = document.getElementById('scoreDisplay');
 const bestDisplay = document.getElementById('bestDisplay');
@@ -472,7 +475,7 @@ function drawAll() {
   for (let r = 0; r < SIZE; r++) {
     for (let c = 0; c < SIZE; c++) {
       ctx.fillStyle = '#14142a';
-      roundRect(ctx, PAD + c * (CELL + GAP), PAD + r * (CELL + GAP), CELL - GAP, CELL - GAP, 10);
+      roundRect(ctx, PAD + c * STRIDE, PAD + r * STRIDE, CELL, CELL, 10);
       ctx.fill();
     }
   }
@@ -517,9 +520,9 @@ function drawAll() {
 
 function drawTileAt(v, gridX, gridY, scale) {
   const cc = tileColor(v);
-  const size = (CELL - GAP) * scale;
-  const x = PAD + gridX * (CELL + GAP) + (CELL - GAP) * (1 - scale) / 2;
-  const y = PAD + gridY * (CELL + GAP) + (CELL - GAP) * (1 - scale) / 2;
+  const size = CELL * scale;
+  const x = PAD + gridX * STRIDE + (CELL - size) / 2;
+  const y = PAD + gridY * STRIDE + (CELL - size) / 2;
   ctx.save();
   ctx.fillStyle = cc.bg;
   ctx.shadowColor = cc.text;
@@ -537,9 +540,9 @@ function drawTileAt(v, gridX, gridY, scale) {
 
 function drawTile(v, r, c) {
   const cc = tileColor(v);
-  const x = PAD + c * (CELL + GAP);
-  const y = PAD + r * (CELL + GAP);
-  const size = CELL - GAP;
+  const x = PAD + c * STRIDE;
+  const y = PAD + r * STRIDE;
+  const size = CELL;
   ctx.fillStyle = cc.bg;
   ctx.shadowColor = cc.text;
   ctx.shadowBlur = 8;
