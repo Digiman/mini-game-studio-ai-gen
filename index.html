@@ -230,11 +230,11 @@
   <button class="theme-toggle" id="themeToggle" title="Toggle theme">🌙</button>
   <h1>🎮 Mini Game Studio</h1>
   <p>A collection of single-file HTML/JS games &amp; tools</p>
-  <div class="count"><span id="totalCount">14</span> projects · no dependencies · no build</div>
+  <div class="count"><span id="totalCount">22</span> projects · no dependencies · no build</div>
 </div>
 
 <div class="filter-bar" id="filterBar">
-  <button class="filter-btn active" data-filter="all">All <span class="filter-count" id="countAll">14</span></button>
+  <button class="filter-btn active" data-filter="all">All <span class="filter-count" id="countAll">22</span></button>
   <button class="filter-btn" data-filter="arcade" style="border-color:#00ffff55;color:#00ffff;">Arcade <span class="filter-count" id="countArcade">0</span></button>
   <button class="filter-btn" data-filter="puzzle" style="border-color:#ff880055;color:#ff8800;">Puzzle <span class="filter-count" id="countPuzzle">0</span></button>
   <button class="filter-btn" data-filter="procedural" style="border-color:#ff880055;color:#ff8800;">Procedural <span class="filter-count" id="countProcedural">0</span></button>
@@ -445,12 +445,123 @@
     </div>
   </div>
 
+  <!-- ─── Neon Tetris ─── -->
+  <div class="card" data-category="puzzle">
+    <img class="card-image" src="screenshots/tetris.png" alt="" loading="lazy">
+    <div class="card-body">
+      <div class="card-title" style="color:#00ffff;">⧫ Neon Tetris</div>
+      <div class="card-desc">Classic block stacking with ghost piece, hold, next queue, and 7-bag shuffle.</div>
+      <div class="card-tags"><span class="card-tag orange">Puzzle</span><span class="card-tag orange">Classic</span></div>
+      <div class="card-actions">
+        <a href="games/tetris.html" class="card-btn card-btn-play">▶ Play</a>
+        <a href="docs-viewer.html?game=tetris" class="card-btn card-btn-docs">📄 Docs</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Neon Tower Defense ─── -->
+  <div class="card" data-category="strategy">
+    <img class="card-image" src="screenshots/tower-defense.png" alt="" loading="lazy">
+    <div class="card-body">
+      <div class="card-title" style="color:#ff8800;">⚔ Neon Tower Defense</div>
+      <div class="card-desc">Build towers along the enemy path and survive 20 escalating waves.</div>
+      <div class="card-tags"><span class="card-tag yellow">Strategy</span><span class="card-tag yellow">Towers</span></div>
+      <div class="card-actions">
+        <a href="games/tower-defense.html" class="card-btn card-btn-play">▶ Play</a>
+        <a href="docs-viewer.html?game=tower-defense" class="card-btn card-btn-docs">📄 Docs</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Neon Platformer ─── -->
+  <div class="card" data-category="arcade">
+    <img class="card-image" src="screenshots/platformer.png" alt="" loading="lazy">
+    <div class="card-body">
+      <div class="card-title" style="color:#66ff88;">🚀 Neon Platformer</div>
+      <div class="card-desc">2D platformer with double jump, enemies, hazards, and 5 handcrafted levels.</div>
+      <div class="card-tags"><span class="card-tag cyan">Arcade</span><span class="card-tag cyan">Platformer</span></div>
+      <div class="card-actions">
+        <a href="games/platformer.html" class="card-btn card-btn-play">▶ Play</a>
+        <a href="docs-viewer.html?game=platformer" class="card-btn card-btn-docs">📄 Docs</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Neon 2048 ─── -->
+  <div class="card" data-category="puzzle">
+    <img class="card-image" src="screenshots/2048.png" alt="" loading="lazy">
+    <div class="card-body">
+      <div class="card-title" style="color:#ffcc00;">✚ Neon 2048</div>
+      <div class="card-desc">Slide and merge matching tiles to reach the 2048 tile. Undo, animations, and best score.</div>
+      <div class="card-tags"><span class="card-tag orange">Puzzle</span><span class="card-tag orange">Numbers</span></div>
+      <div class="card-actions">
+        <a href="games/2048.html" class="card-btn card-btn-play">▶ Play</a>
+        <a href="docs-viewer.html?game=2048" class="card-btn card-btn-docs">📄 Docs</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Neon Space Invaders ─── -->
+  <div class="card" data-category="arcade">
+    <img class="card-image" src="screenshots/space-invaders.png" alt="" loading="lazy">
+    <div class="card-body">
+      <div class="card-title" style="color:#ff4466;">👾 Neon Space Invaders</div>
+      <div class="card-desc">Retro shooter: defend with shields, shoot UFOs, and clear escalating invader waves.</div>
+      <div class="card-tags"><span class="card-tag cyan">Arcade</span><span class="card-tag red">Shooter</span></div>
+      <div class="card-actions">
+        <a href="games/space-invaders.html" class="card-btn card-btn-play">▶ Play</a>
+        <a href="docs-viewer.html?game=space-invaders" class="card-btn card-btn-docs">📄 Docs</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Neon Wordle ─── -->
+  <div class="card" data-category="puzzle">
+    <img class="card-image" src="screenshots/wordle.png" alt="" loading="lazy">
+    <div class="card-body">
+      <div class="card-title" style="color:#66ff88;">🟩 Neon Wordle</div>
+      <div class="card-desc">Guess the hidden word in 6 tries with color feedback. Daily and random modes with stats.</div>
+      <div class="card-tags"><span class="card-tag orange">Puzzle</span><span class="card-tag green">Words</span></div>
+      <div class="card-actions">
+        <a href="games/wordle.html" class="card-btn card-btn-play">▶ Play</a>
+        <a href="docs-viewer.html?game=wordle" class="card-btn card-btn-docs">📄 Docs</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Neon Sudoku ─── -->
+  <div class="card" data-category="puzzle">
+    <img class="card-image" src="screenshots/sudoku.png" alt="" loading="lazy">
+    <div class="card-body">
+      <div class="card-title" style="color:#ff8800;">🧩 Neon Sudoku</div>
+      <div class="card-desc">Fill the 9×9 grid with notes, hints, undo, and unique puzzles in 4 difficulties.</div>
+      <div class="card-tags"><span class="card-tag orange">Puzzle</span><span class="card-tag orange">Numbers</span></div>
+      <div class="card-actions">
+        <a href="games/sudoku.html" class="card-btn card-btn-play">▶ Play</a>
+        <a href="docs-viewer.html?game=sudoku" class="card-btn card-btn-docs">📄 Docs</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Neon Bubble Shooter ─── -->
+  <div class="card" data-category="arcade">
+    <img class="card-image" src="screenshots/bubble-shooter.png" alt="" loading="lazy">
+    <div class="card-body">
+      <div class="card-title" style="color:#00ffff;">🫧 Neon Bubble Shooter</div>
+      <div class="card-desc">Aim and shoot to match 3+ bubbles, pop clusters, and drop floating groups.</div>
+      <div class="card-tags"><span class="card-tag cyan">Arcade</span><span class="card-tag cyan">Puzzle</span></div>
+      <div class="card-actions">
+        <a href="games/bubble-shooter.html" class="card-btn card-btn-play">▶ Play</a>
+        <a href="docs-viewer.html?game=bubble-shooter" class="card-btn card-btn-docs">📄 Docs</a>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <div class="footer">
   <a href="https://github.com/yourusername/mini-game-studio" target="_blank" rel="noopener">Mini Game Studio</a>
-  · 14 projects · vanilla JS &amp; Canvas 2D
-  · <a href="README.md">README</a>
+  · 22 projects · vanilla JS &amp; Canvas 2D
 </div>
 
 <script>

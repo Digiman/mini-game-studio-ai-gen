@@ -1,6 +1,6 @@
 # 🎮 Mini Game Studio
 
-A collection of **14 single-file HTML/JS games and interactive tools** — no dependencies, no build steps, just open and play. Each project is self-contained in a single `.html` file with full documentation in the `docs/` folder.
+A collection of **22 single-file HTML/JS games and interactive tools** — no dependencies, no build steps, just open and play. Each project is self-contained in a single `.html` file with full documentation in the `docs/` folder.
 
 ---
 
@@ -60,17 +60,49 @@ Draw pixel art with undo/redo, flood fill, color palette, and PNG export.
 3 modes: Aim Trainer, Sequence Recall, and Moving Target.
 📄 [Docs](docs/reaction-test.md)
 
+## ⧫ [Neon Tetris](games/tetris.html)
+Classic block stacking with ghost piece, hold, next queue, and 7-bag shuffle.
+📄 [Docs](docs/tetris.md)
+
+## ⚔ [Neon Tower Defense](games/tower-defense.html)
+Build towers along the enemy path and survive 20 escalating waves.
+📄 [Docs](docs/tower-defense.md)
+
+## 🚀 [Neon Platformer](games/platformer.html)
+2D platformer with double jump, enemies, hazards, and 5 handcrafted levels.
+📄 [Docs](docs/platformer.md)
+
+## ✚ [Neon 2048](games/2048.html)
+Slide and merge matching tiles to reach the 2048 tile. Undo, animations, and best score.
+📄 [Docs](docs/2048.md)
+
+## 👾 [Neon Space Invaders](games/space-invaders.html)
+Retro shooter: defend with shields, shoot UFOs, and clear escalating invader waves.
+📄 [Docs](docs/space-invaders.md)
+
+## 🟩 [Neon Wordle](games/wordle.html)
+Guess the hidden word in 6 tries with color feedback. Daily and random modes with stats.
+📄 [Docs](docs/wordle.md)
+
+## 🧩 [Neon Sudoku](games/sudoku.html)
+Fill the 9×9 grid with notes, hints, undo, and unique puzzles in 4 difficulties.
+📄 [Docs](docs/sudoku.md)
+
+## 🫧 [Neon Bubble Shooter](games/bubble-shooter.html)
+Aim and shoot to match 3+ bubbles, pop clusters, and drop floating groups.
+📄 [Docs](docs/bubble-shooter.md)
+
 ---
 
 ## 🗂 Project Structure
 
 ```
 Test1/
-├── index.html                 # 🏠 Catalog homepage (14 projects)
+├── index.html                 # 🏠 Catalog homepage (22 projects)
 ├── README.md
-├── screenshots/               # 14 PNG screenshots
-├── docs/                      # 14 markdown files
-└── games/                     # 14 game HTML files
+├── screenshots/               # 22 PNG screenshots
+├── docs/                      # 22 markdown files
+└── games/                     # 22 game HTML files
 ```
 
 ## 💻 Tech
@@ -99,7 +131,7 @@ This project is a showcase of **AI-assisted game development**. Every game, the 
 - **OpenRouter** — the API gateway that routes the agent's requests to the underlying model
 - **DeepSeek V4 Flash** — the large language model generating the code, visuals logic, and documentation
 
-The workflow was simple: each game was requested in natural language, ZCode generated the single-file implementation, and the output was reviewed and refined in an interactive loop. All 14 games, the themed catalog (`index.html`), the documentation viewer (`docs-viewer.html`), and the served docs were produced this way.
+The workflow was simple: each game was requested in natural language, ZCode generated the single-file implementation, and the output was reviewed and refined in an interactive loop. All 22 games, the themed catalog (`index.html`), the documentation viewer (`docs-viewer.html`), and the served docs were produced this way.
 
 > **TL;DR** — Human ideas + AI execution. Everything in `games/`, `docs/`, and the two top-level HTML files was generated with **ZCode + OpenRouter + DeepSeek V4 Flash**.
 
@@ -109,11 +141,14 @@ These games were designed to test different AI model capabilities:
 
 | Capability | Game |
 |---|---|
-| Algorithm & Logic | Sokoban, Minesweeper, Connect Four |
-| Real-Time Physics | Pong/Breakout, Particle Sandbox |
+| Algorithm & Logic | Sokoban, Minesweeper, Connect Four, Tetris, 2048, Sudoku |
+| Real-Time Physics | Pong/Breakout, Particle Sandbox, Bubble Shooter |
 | Simulation | Cellular Automata |
 | Procedural Generation | Landscape Generator, Mandelbrot |
 | Audio & Sequencing | Piano/Sequencer |
-| Game Loop Design | Snake, Asteroid Shooter, Memory Match |
+| Game Loop Design | Snake, Asteroid Shooter, Memory Match, Space Invaders |
 | Reflex & Timing | Reaction Test |
 | Creative Tools | Pixel Art Editor |
+| Strategy & Resource Mgmt | Tower Defense |
+| Platforming & Level Design | Platformer |
+| Word & Logic Puzzles | Wordle |
