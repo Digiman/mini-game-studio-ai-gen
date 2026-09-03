@@ -76,6 +76,7 @@
     font-size: 0.8rem; font-weight: 700; text-transform: uppercase; cursor: pointer;
     display: flex; align-items: center; justify-content: center; height: 44px; min-width: 30px; flex: 1;
     transition: background 0.15s;
+    touch-action: manipulation; -webkit-tap-highlight-color: transparent;
   }
   .kb-key.wide { flex: 1.6; font-size: 0.7rem; }
   .kb-key:active { transform: scale(0.95); }
@@ -133,6 +134,14 @@
     .kb-key { height: 40px; min-width: 26px; font-size: 0.75rem; }
     .modal h2 { font-size: 1.2rem; }
   }
+  :focus-visible { outline: 2px solid #00ffff; outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
 </style>
 </head>
 <body>
@@ -171,7 +180,7 @@
 </div>
 
 <!-- Result overlay -->
-<div class="overlay" id="resultOverlay">
+<div class="overlay" id="resultOverlay" aria-live="assertive">
   <div class="modal">
     <h2 id="resultTitle">You Win!</h2>
     <div class="answer" id="resultAnswer">----</div>
@@ -182,7 +191,7 @@
 </div>
 
 <!-- Stats overlay -->
-<div class="overlay" id="statsOverlay">
+<div class="overlay" id="statsOverlay" aria-live="polite">
   <div class="modal">
     <h2>📊 Statistics</h2>
     <div class="stat-grid">
@@ -380,6 +389,7 @@ function buildKeyboard() {
       const back = document.createElement('button');
       back.className = 'kb-key wide';
       back.textContent = '⌫';
+      back.setAttribute('aria-label', 'Delete');
       back.addEventListener('click', () => deleteLetter());
       row.appendChild(back);
     } else {

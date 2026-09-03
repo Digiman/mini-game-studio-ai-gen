@@ -62,6 +62,7 @@
     font-size: 1.5rem; font-weight: 700; cursor: pointer;
     font-variant-numeric: tabular-nums; transition: background 0.15s;
     color: #e0e0e0; position: relative;
+    touch-action: manipulation; -webkit-tap-highlight-color: transparent;
   }
   /* 3x3 box separators */
   table.board td.br { border-right: 3px solid #2a2a46; }
@@ -132,6 +133,14 @@
     .num-btn { width: 34px; height: 38px; font-size: 1rem; }
     .overlay h2 { font-size: 1.5rem; }
   }
+  :focus-visible { outline: 2px solid #00ffff; outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
 </style>
 </head>
 <body>
@@ -149,7 +158,7 @@
 
   <div class="hud">
     <div class="stat">Mistakes: <span id="mistakeDisplay">0</span></div>
-    <div class="timer" id="timerDisplay">00:00</div>
+    <div class="timer" id="timerDisplay" aria-live="polite">00:00</div>
     <div class="best"><span id="bestLabel">Best</span> <span id="bestDisplay">–</span></div>
   </div>
 
@@ -173,7 +182,7 @@
       <button class="btn btn-start" id="startBtn">Start Game</button>
     </div>
 
-    <div class="overlay" id="winOverlay">
+    <div class="overlay" id="winOverlay" aria-live="assertive">
       <h2 class="win-title">Solved!</h2>
       <div class="final-score">Time: <span id="finalTime">00:00</span> &nbsp;·&nbsp; <span id="finalDiff">Medium</span></div>
       <div class="new-high" id="newBestBadge" style="display:none;">★ New Best Time! ★</div>
