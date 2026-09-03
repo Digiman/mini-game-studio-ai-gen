@@ -28,5 +28,5 @@ A single-file HTML/JS card-flip matching game with timer, move counter, and conf
 ## File
 
 ```
-C:\AI\Projects\Test1\games\memory-match.html
+games/memory-match.html
 ```

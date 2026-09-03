@@ -115,7 +115,7 @@ Each asteroid has a randomized jagged polygon shape with 7–12 vertices, rotate
 ## File
 
 \`\`\`
-C:\\AI\\Projects\\Test1\\games\\asteroids.html
+games/asteroids.html
 \`\`\`
 
 ## Possible Enhancements
@@ -212,7 +212,7 @@ A simulation sandbox with 3 rule systems: Conway's Game of Life, Falling Sand, a
 ## File
 
 \`\`\`
-C:\\AI\\Projects\\Test1\\games\\cellular-automata.html
+games/cellular-automata.html
 \`\`\``,
   'connect-four': `# ⚫ Connect Four
 
@@ -250,7 +250,7 @@ Drop four discs in a row to win. Play against a Minimax AI opponent or locally w
 ## File
 
 \`\`\`
-C:\\AI\\Projects\\Test1\\games\\connect-four.html
+games/connect-four.html
 \`\`\``,
   'landscape-generator': `# 🏔️ Procedural Landscape Generator
 
@@ -300,7 +300,7 @@ Send the link to anyone — they'll see the exact same landscape. No server requ
 ## File
 
 \`\`\`
-C:\\AI\\Projects\\Test1\\games\\landscape-generator.html
+games/landscape-generator.html
 \`\`\`
 
 ## Possible Enhancements
@@ -402,7 +402,7 @@ A single-file HTML/JS interactive fractal viewer for the Mandelbrot set. Pan, zo
 ## File
 
 \`\`\`
-C:\\AI\\Projects\\Test1\\games\\mandelbrot.html
+games/mandelbrot.html
 \`\`\`
 
 ## Possible Enhancements
@@ -443,7 +443,7 @@ A single-file HTML/JS card-flip matching game with timer, move counter, and conf
 ## File
 
 \`\`\`
-C:\\AI\\Projects\\Test1\\games\\memory-match.html
+games/memory-match.html
 \`\`\``,
   'minesweeper': `# 💣 Minesweeper
 
@@ -470,7 +470,7 @@ Classic minesweeper with flood-fill reveal, flagging, and 3 difficulty levels.
 ## File
 
 \`\`\`
-C:\\AI\\Projects\\Test1\\games\\minesweeper.html
+games/minesweeper.html
 \`\`\``,
   'particle-sandbox': `# ✦ Particle Sandbox
 
@@ -560,7 +560,7 @@ A single-file HTML/JS physics playground where you can spawn, fling, and watch p
 ## File
 
 \`\`\`
-C:\\AI\\Projects\\Test1\\games\\particle-sandbox.html
+games/particle-sandbox.html
 \`\`\`
 
 ## Possible Enhancements
@@ -662,7 +662,7 @@ The WAV export renders the full sequencer pattern using the current waveform and
 ## File
 
 \`\`\`
-C:\\AI\\Projects\\Test1\\games\\piano-sequencer.html
+games/piano-sequencer.html
 \`\`\`
 
 ## Possible Enhancements
@@ -702,7 +702,7 @@ A browser-based pixel art drawing tool with undo/redo, flood fill, configurable 
 ## File
 
 \`\`\`
-C:\\AI\\Projects\\Test1\\games\\pixel-art-editor.html
+games/pixel-art-editor.html
 \`\`\``,
   'platformer': `# 🚀 Neon Platformer
 
@@ -790,7 +790,7 @@ Two classic arcade games in one HTML file. Break bricks or play Pong against an 
 ## File
 
 \`\`\`
-C:\\AI\\Projects\\Test1\\games\\pong-breakout.html
+games/pong-breakout.html
 \`\`\``,
   'reaction-test': `# 🔮 Reaction Time Test
 
@@ -822,7 +822,7 @@ Test your reflexes across 3 modes: Aim Trainer, Sequence Recall, and Moving Targ
 ## File
 
 \`\`\`
-C:\\AI\\Projects\\Test1\\games\\reaction-test.html
+games/reaction-test.html
 \`\`\``,
   'snake-game': `# 🐍 Neon Snake Game
 
@@ -879,7 +879,7 @@ Active power-ups are shown as badges below the HUD with remaining time.
 ## File
 
 \`\`\`
-C:\\AI\\Projects\\Test1\\games\\snake.html
+games/snake.html
 \`\`\`
 
 ## Possible Enhancements
@@ -918,7 +918,7 @@ Push-box puzzle game with 5 levels, undo support, and keyboard controls.
 ## File
 
 \`\`\`
-C:\\AI\\Projects\\Test1\\games\\sokoban.html
+games/sokoban.html
 \`\`\``,
   'space-invaders': `# 👾 Neon Space Invaders
 

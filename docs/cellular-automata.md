@@ -33,5 +33,5 @@ A simulation sandbox with 3 rule systems: Conway's Game of Life, Falling Sand, a
 ## File
 
 ```
-C:\AI\Projects\Test1\games\cellular-automata.html
+games/cellular-automata.html
 ```

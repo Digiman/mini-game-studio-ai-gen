@@ -46,7 +46,7 @@ Send the link to anyone — they'll see the exact same landscape. No server requ
 ## File
 
 ```
-C:\AI\Projects\Test1\games\landscape-generator.html
+games/landscape-generator.html
 ```
 
 ## Possible Enhancements

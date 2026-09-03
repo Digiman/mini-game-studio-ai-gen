@@ -53,7 +53,7 @@ Active power-ups are shown as badges below the HUD with remaining time.
 ## File
 
 ```
-C:\AI\Projects\Test1\games\snake.html
+games/snake.html
 ```
 
 ## Possible Enhancements

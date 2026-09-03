@@ -86,7 +86,7 @@ A single-file HTML/JS physics playground where you can spawn, fling, and watch p
 ## File
 
 ```
-C:\AI\Projects\Test1\games\particle-sandbox.html
+games/particle-sandbox.html
 ```
 
 ## Possible Enhancements

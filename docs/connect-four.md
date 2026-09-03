@@ -34,5 +34,5 @@ Drop four discs in a row to win. Play against a Minimax AI opponent or locally w
 ## File
 
 ```
-C:\AI\Projects\Test1\games\connect-four.html
+games/connect-four.html
 ```

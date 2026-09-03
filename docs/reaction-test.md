@@ -28,5 +28,5 @@ Test your reflexes across 3 modes: Aim Trainer, Sequence Recall, and Moving Targ
 ## File
 
 ```
-C:\AI\Projects\Test1\games\reaction-test.html
+games/reaction-test.html
 ```

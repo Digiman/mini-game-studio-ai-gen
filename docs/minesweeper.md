@@ -23,5 +23,5 @@ Classic minesweeper with flood-fill reveal, flagging, and 3 difficulty levels.
 ## File
 
 ```
-C:\AI\Projects\Test1\games\minesweeper.html
+games/minesweeper.html
 ```
