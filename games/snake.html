@@ -232,12 +232,49 @@
   .powerup-badge.shrink  { background: #66ff66; color: #0a0a12; box-shadow: 0 0 10px rgba(102,255,102,0.4); }
   .powerup-badge.shield  { background: #ffcc00; color: #0a0a12; box-shadow: 0 0 10px rgba(255,204,0,0.4); }
 
+  .touch-pad {
+    display: grid;
+    grid-template-columns: repeat(3, 44px);
+    grid-template-rows: repeat(2, 44px);
+    gap: 6px;
+    justify-content: center;
+    margin-top: 10px;
+  }
+  .touch-btn {
+    width: 44px; height: 44px;
+    background: rgba(30, 30, 48, 0.8);
+    border: 1px solid rgba(0, 255, 255, 0.35);
+    border-radius: 10px;
+    color: #00ffff;
+    font-size: 0.95rem;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+  }
+  .touch-btn:active { background: rgba(0, 255, 255, 0.25); }
+  #touchUp    { grid-column: 2; grid-row: 1; }
+  #touchPause { grid-column: 3; grid-row: 1; }
+  #touchLeft  { grid-column: 1; grid-row: 2; }
+  #touchDown  { grid-column: 2; grid-row: 2; }
+  #touchRight { grid-column: 3; grid-row: 2; }
+
   @media (max-width: 500px) {
     .hud { font-size: 0.8rem; }
     .hud-left, .hud-right { gap: 10px; }
     .overlay h2 { font-size: 1.6rem; }
     .btn { padding: 6px 14px; font-size: 0.8rem; }
   }
+
+  :focus-visible { outline: 2px solid #00ffff; outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
 </style>
 </head>
 <body>
@@ -270,17 +307,17 @@
     <div class="hud-left">
       <div class="hud-score">
         <div class="hud-label">Score</div>
-        <div class="hud-value" id="scoreDisplay">0</div>
+        <div class="hud-value" id="scoreDisplay" aria-live="polite">0</div>
       </div>
       <div class="hud-high">
         <div class="hud-label">Best</div>
-        <div class="hud-value" id="highDisplay">0</div>
+        <div class="hud-value" id="highDisplay" aria-live="polite">0</div>
       </div>
     </div>
     <div class="hud-right">
       <div class="hud-level">
         <div class="hud-label">Level</div>
-        <div class="hud-value" id="levelDisplay">1</div>
+        <div class="hud-value" id="levelDisplay" aria-live="polite">1</div>
       </div>
       <div class="hud-level">
         <div class="hud-label">Speed</div>
@@ -290,6 +327,14 @@
   </div>
 
   <div class="powerup-indicator" id="powerupIndicator"></div>
+
+  <div class="touch-pad">
+    <button id="touchUp" class="touch-btn">▲</button>
+    <button id="touchPause" class="touch-btn">⏸</button>
+    <button id="touchLeft" class="touch-btn">◀</button>
+    <button id="touchDown" class="touch-btn">▼</button>
+    <button id="touchRight" class="touch-btn">▶</button>
+  </div>
 
   <div class="key-hint">
     <kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd> or <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> ·
@@ -357,6 +402,32 @@ let frameCount = 0;
 // Base interval (ms per tick) — speed ramps down
 const BASE_INTERVAL = 180;
 const MIN_INTERVAL = 50;
+
+// ── SFX (inline, copied per game: lazy AudioContext + tiny synth) ──
+let sfxCtx = null;
+function sfx(type) {
+  try {
+    if (!sfxCtx) sfxCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (sfxCtx.state === 'suspended') sfxCtx.resume();
+    const t = sfxCtx.currentTime;
+    const o = sfxCtx.createOscillator();
+    const g = sfxCtx.createGain();
+    const defs = {
+      move:  { type: 'square',  freq: 220, dur: 0.06, vol: 0.03 },
+      score: { type: 'triangle',freq: 660, dur: 0.10, vol: 0.05 },
+      clear: { type: 'sawtooth',freq: 520, dur: 0.08, vol: 0.04 },
+      hit:   { type: 'square',  freq: 140, dur: 0.10, vol: 0.06 },
+      lose:  { type: 'sawtooth',freq: 180, dur: 0.25, vol: 0.06 },
+      win:   { type: 'triangle',freq: 880, dur: 0.20, vol: 0.06 },
+    };
+    const d = defs[type] || defs.move;
+    o.type = d.type; o.frequency.value = d.freq;
+    g.gain.setValueAtTime(d.vol, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + d.dur);
+    o.connect(g); g.connect(sfxCtx.destination);
+    o.start(t); o.stop(t + d.dur + 0.02);
+  } catch (e) { /* audio unavailable */ }
+}
 
 // ─── Init ───────────────────────────────────────────────────────────────────
 highDisplay.textContent = highScore;
@@ -446,6 +517,7 @@ function tick() {
   let ate = false;
   if (food && newHead.x === food.x && newHead.y === food.y) {
     ate = true;
+    sfx('score');
     score += 10;
     scoreDisplay.textContent = score;
     spawnFood();
@@ -557,6 +629,7 @@ function updatePowerupUI() {
 
 // ─── Game Over ──────────────────────────────────────────────────────────────
 function gameOver() {
+  sfx('lose');
   gameRunning = false;
   if (gameLoopId) {
     clearTimeout(gameLoopId);
@@ -779,11 +852,18 @@ document.addEventListener('keydown', (e) => {
   }
 
   const newDir = KEY_MAP[e.key];
-  if (newDir && newDir !== OPPOSITE[dir]) {
+  if (newDir) {
     e.preventDefault();
-    nextDir = newDir;
+    setDirection(newDir);
   }
 });
+
+function setDirection(newDir) {
+  if (newDir !== OPPOSITE[dir]) {
+    nextDir = newDir;
+    if (gameRunning && !gamePaused) sfx('move');
+  }
+}
 
 // ─── Buttons ────────────────────────────────────────────────────────────────
 document.getElementById('startBtn').addEventListener('click', startGame);
@@ -799,6 +879,26 @@ document.addEventListener('visibilitychange', () => {
     gamePaused = false;
     gameLoop();
   }
+});
+
+// ── Touch controls (mobile) ──
+function touchAction(btnId, down, up) {
+  const el = document.getElementById(btnId);
+  if (!el) return;
+  el.addEventListener('touchstart', (e) => { e.preventDefault(); if (down) down(); }, { passive: false });
+  el.addEventListener('touchend',   (e) => { e.preventDefault(); if (up) up(); }, { passive: false });
+  el.addEventListener('touchcancel',(e) => { e.preventDefault(); if (up) up(); }, { passive: false });
+}
+
+touchAction('touchUp',    () => setDirection('UP'));
+touchAction('touchDown',  () => setDirection('DOWN'));
+touchAction('touchLeft',  () => setDirection('LEFT'));
+touchAction('touchRight', () => setDirection('RIGHT'));
+touchAction('touchPause', () => {
+  if (!gameRunning) return;
+  autoPaused = false;
+  gamePaused = !gamePaused;
+  if (!gamePaused) gameLoop();
 });
 
 // ─── Initial draw ───────────────────────────────────────────────────────────

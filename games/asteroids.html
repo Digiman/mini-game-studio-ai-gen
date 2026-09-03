@@ -204,12 +204,44 @@
   }
   .overlay .high-score span { color: #00ffff; }
 
+  .touch-pad {
+    display: grid;
+    grid-template-columns: repeat(3, 44px);
+    gap: 6px;
+    justify-content: center;
+    margin-top: 10px;
+  }
+  .touch-btn {
+    width: 44px; height: 44px;
+    background: rgba(30, 30, 48, 0.8);
+    border: 1px solid rgba(255, 102, 0, 0.4);
+    border-radius: 10px;
+    color: #ff8833;
+    font-size: 0.95rem;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+  }
+  .touch-btn:active { background: rgba(255, 102, 0, 0.25); }
+  #touchFire { width: 100%; }
+
   @media (max-width: 500px) {
     .hud { font-size: 0.75rem; }
     .hud-left, .hud-right { gap: 12px; }
     .overlay h2 { font-size: 1.5rem; }
     .btn { padding: 6px 14px; font-size: 0.8rem; }
   }
+
+  :focus-visible { outline: 2px solid #00ffff; outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
 </style>
 </head>
 <body>
@@ -242,27 +274,34 @@
     <div class="hud-left">
       <div class="hud-score">
         <div class="hud-label">Score</div>
-        <div class="hud-value" id="scoreDisplay">0</div>
+        <div class="hud-value" id="scoreDisplay" aria-live="polite">0</div>
       </div>
       <div class="hud-high">
         <div class="hud-label">Best</div>
-        <div class="hud-value" id="highDisplay">0</div>
+        <div class="hud-value" id="highDisplay" aria-live="polite">0</div>
       </div>
     </div>
     <div class="hud-right">
       <div class="hud-wave">
         <div class="hud-label">Wave</div>
-        <div class="hud-value" id="waveDisplay">1</div>
+        <div class="hud-value" id="waveDisplay" aria-live="polite">1</div>
       </div>
       <div class="hud-lives">
         <div class="hud-label">Lives</div>
-        <div class="hud-value" id="livesDisplay">❤❤❤</div>
+        <div class="hud-value" id="livesDisplay" aria-live="polite">❤❤❤</div>
       </div>
     </div>
   </div>
 
   <div class="key-hint">
     <kbd>←</kbd> <kbd>→</kbd> Rotate &nbsp;·&nbsp; <kbd>↑</kbd> Thrust &nbsp;·&nbsp; <kbd>Space</kbd> Shoot &nbsp;·&nbsp; <kbd>P</kbd> Pause
+  </div>
+
+  <div class="touch-pad">
+    <button id="touchLeft" class="touch-btn">◀</button>
+    <button id="touchUp" class="touch-btn">▲</button>
+    <button id="touchRight" class="touch-btn">▶</button>
+    <button id="touchFire" class="touch-btn">🔫</button>
   </div>
 </div>
 
@@ -282,6 +321,32 @@ const newHighBadge = document.getElementById('newHighBadge');
 const highScoreDisplay = document.getElementById('highScoreDisplay');
 const startOverlay = document.getElementById('startOverlay');
 const gameOverOverlay = document.getElementById('gameOverOverlay');
+
+// ── SFX (inline, copied per game: lazy AudioContext + tiny synth) ──
+let sfxCtx = null;
+function sfx(type) {
+  try {
+    if (!sfxCtx) sfxCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (sfxCtx.state === 'suspended') sfxCtx.resume();
+    const t = sfxCtx.currentTime;
+    const o = sfxCtx.createOscillator();
+    const g = sfxCtx.createGain();
+    const defs = {
+      move:  { type: 'square',  freq: 220, dur: 0.06, vol: 0.03 },
+      score: { type: 'triangle',freq: 660, dur: 0.10, vol: 0.05 },
+      clear: { type: 'sawtooth',freq: 520, dur: 0.08, vol: 0.04 },
+      hit:   { type: 'square',  freq: 140, dur: 0.10, vol: 0.06 },
+      lose:  { type: 'sawtooth',freq: 180, dur: 0.25, vol: 0.06 },
+      win:   { type: 'triangle',freq: 880, dur: 0.20, vol: 0.06 },
+    };
+    const d = defs[type] || defs.move;
+    o.type = d.type; o.frequency.value = d.freq;
+    g.gain.setValueAtTime(d.vol, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + d.dur);
+    o.connect(g); g.connect(sfxCtx.destination);
+    o.start(t); o.stop(t + d.dur + 0.02);
+  } catch (e) { /* audio unavailable */ }
+}
 
 // ─── High Score ─────────────────────────────────────────────────────────────
 let highScore = parseInt(localStorage.getItem('mg_asteroids_high') || localStorage.getItem('asteroid_high') || '0', 10);
@@ -409,6 +474,7 @@ function shootBullet() {
     born: now,
     radius: BULLET_RADIUS,
   });
+  sfx('hit');
 }
 
 // ─── Particles ──────────────────────────────────────────────────────────────
@@ -497,6 +563,7 @@ function update(dt) {
       if (dist(b, a) < a.radius + b.radius) {
         // Hit!
         hit = true;
+        sfx('hit');
         score += a.score;
         scoreDisplay.textContent = score;
 
@@ -524,6 +591,7 @@ function update(dt) {
         spawnShipExplosion(ship.x, ship.y);
         lives--;
         updateLivesUI();
+        sfx('hit');
 
         if (lives <= 0) {
           gameOver();
@@ -688,6 +756,7 @@ function draw() {
 function gameOver() {
   gameRunning = false;
   ship = null;
+  sfx('lose');
 
   finalScore.textContent = score;
   highScoreDisplay.textContent = highScore;
@@ -816,6 +885,21 @@ document.addEventListener('visibilitychange', () => {
 // ─── Buttons ────────────────────────────────────────────────────────────────
 document.getElementById('startBtn').addEventListener('click', startGame);
 document.getElementById('restartBtn').addEventListener('click', startGame);
+
+// ── Touch controls (mobile) ──
+function touchAction(btnId, down, up) {
+  const el = document.getElementById(btnId);
+  if (!el) return;
+  el.addEventListener('touchstart', (e) => { e.preventDefault(); if (down) down(); }, { passive: false });
+  el.addEventListener('touchend',   (e) => { e.preventDefault(); if (up) up(); }, { passive: false });
+  el.addEventListener('touchcancel',(e) => { e.preventDefault(); if (up) up(); }, { passive: false });
+}
+
+touchAction('touchLeft',  () => { keys.left = true; },  () => { keys.left = false; });
+touchAction('touchRight', () => { keys.right = true; }, () => { keys.right = false; });
+touchAction('touchUp',    () => { keys.up = true; if (ship) ship.thrusting = true; },
+                         () => { keys.up = false; if (ship) ship.thrusting = false; });
+touchAction('touchFire',  () => { if (ship) shootBullet(); });
 
 // ─── Initial draw ───────────────────────────────────────────────────────────
 draw._stars = null;

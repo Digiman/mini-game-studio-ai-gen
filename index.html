@@ -206,6 +206,21 @@
   body.light .card-tag.pink   { background: #fde8f0; color: #b03060; }
   body.light .card-tag.yellow { background: #fef8e0; color: #9a7000; }
   .card-actions { display: flex; gap: 6px; }
+  .card-best {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 0.68rem; font-weight: 700; letter-spacing: 0.3px;
+    padding: 2px 8px; border-radius: 20px; margin-top: 6px;
+    background: var(--tag-bg); color: var(--tag-text);
+    border: 1px solid var(--card-border);
+  }
+  .card-best.has-score { color: #ffcc00; border-color: #ffcc0055; }
+  .card-touch {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 0.58rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px;
+    padding: 2px 8px; border-radius: 20px; margin-left: 4px;
+    background: #002a3a; color: #00ffff; border: 1px solid #00ffff33;
+  }
+  body.light .card-touch { background: #e0f0f5; color: #006680; }
   .card-btn {
     padding: 6px 14px; border: none; border-radius: 8px; font-size: 0.72rem; font-weight: 700;
     cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; text-decoration: none;
@@ -219,6 +234,14 @@
   .footer { text-align: center; padding: 24px; color: var(--footer-text); font-size: 0.75rem; border-top: 1px solid var(--footer-border); transition: color 0.3s, border-color 0.3s; }
   .footer a { color: var(--footer-link); text-decoration: none; transition: color 0.3s; }
   .footer a:hover { color: var(--footer-link-hover); }
+  :focus-visible { outline: 2px solid #00ffff; outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
   @media (max-width: 500px) {
     .header h1 { font-size: 1.5rem; }
     .grid { grid-template-columns: 1fr; padding: 16px; gap: 16px; }
@@ -248,7 +271,7 @@
   </div>
   <h1>🎮 Mini Game Studio</h1>
   <p>A collection of single-file HTML/JS games &amp; tools</p>
-  <div class="count"><span id="totalCount">22</span> projects · no dependencies · no build</div>
+  <div class="count"><span id="totalCount" aria-live="polite">22</span> projects · no dependencies · no build</div>
 </div>
 
 <div class="filter-bar" id="filterBar">
@@ -646,6 +669,59 @@
   });
 
   updateCounts();
+
+  // ── Catalog polish: per-game best score + touch badge ──
+  // Reads each game's canonical `mg_<name>_high` key. Only games that
+  // actually persist a best are mapped; the rest show no badge. Badges are
+  // injected so the catalog HTML stays declarative.
+  function bestFor(file) {
+    const raw = localStorage.getItem('mg_' + file + '_high');
+    if (raw !== null) return { n: parseInt(raw, 10) || 0 };
+    if (file === 'reaction-test') {
+      const bestTimes = JSON.parse(localStorage.getItem('mg_reaction_best') || '{}');
+      const vals = Object.values(bestTimes).filter(v => typeof v === 'number' && v > 0);
+      if (!vals.length) return null;
+      return { n: Math.min(...vals), ms: true };
+    }
+    if (file === 'sudoku') {
+      const vals = ['easy','medium','hard','expert']
+        .map(d => parseInt(localStorage.getItem('mg_sudoku_best_' + d) || '0', 10))
+        .filter(v => v > 0);
+      if (!vals.length) return null;
+      return { n: Math.min(...vals), sec: true };
+    }
+    return null;
+  }
+  function fmtBest(b) {
+    if (b.ms) return b.n.toLocaleString() + ' ms';
+    if (b.sec) return b.n + 's';
+    return b.n.toLocaleString();
+  }
+  // Games that ship on-screen touch controls (d-pad / buttons / tap-friendly grids)
+  const TOUCH_GAMES = new Set(['snake','tetris','asteroids','pong-breakout','sokoban','tower-defense',
+    'minesweeper','memory-match','sudoku','wordle','connect-four','bubble-shooter','space-invaders',
+    '2048','platformer','reaction-test','mandelbrot','particle-sandbox','cellular-automata',
+    'pixel-art-editor','piano-sequencer','landscape-generator']);
+
+  cards.forEach(card => {
+    const playHref = card.querySelector('.card-btn-play').getAttribute('href');
+    const file = playHref.replace(/^games\//, '').replace(/\.html$/, '');
+    const best = bestFor(file);
+    if (best) {
+      const bestEl = document.createElement('span');
+      bestEl.className = 'card-best has-score';
+      bestEl.textContent = '🏆 Best: ' + fmtBest(best);
+      bestEl.setAttribute('aria-hidden', 'true');
+      card.querySelector('.card-body').appendChild(bestEl);
+    }
+    if (TOUCH_GAMES.has(file)) {
+      const t = document.createElement('span');
+      t.className = 'card-touch';
+      t.textContent = '📱 Touch';
+      t.setAttribute('aria-hidden', 'true');
+      card.querySelector('.card-tags').appendChild(t);
+    }
+  });
 </script>
 </body>
 </html>

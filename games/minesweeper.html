@@ -30,6 +30,7 @@
     display: flex; align-items: center; justify-content: center;
     font-size: 0.8rem; font-weight: 700;
     transition: background 0.1s;
+    touch-action: manipulation; -webkit-tap-highlight-color: transparent;
   }
   .cell:hover { background: #2a2a4e; }
   .cell.revealed { background: #0d0d1a; border-color: #1a1a2e; cursor: default; }
@@ -76,6 +77,14 @@
   .key-hint { font-size: 0.55rem; color: #444; margin-top: 4px; }
   .key-hint kbd { background: #14142a; padding: 1px 5px; border-radius: 3px; border: 1px solid #333; font-family: inherit; color: #777; }
   @media (max-width: 500px) { .cell { font-size: 0.6rem; } }
+  :focus-visible { outline: 2px solid #00ffff; outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
 </style>
 </head>
 <body>
@@ -84,19 +93,19 @@
   <p class="subtitle">Clear the field · don't click the mines</p>
   <div class="game-wrapper">
     <div class="grid" id="grid"></div>
-    <div class="overlay" id="winOverlay">
+    <div class="overlay" id="winOverlay" aria-live="assertive">
       <h2 class="win-title">🎉 You Win!</h2>
       <p>Time: <span id="winTime">0s</span></p>
       <button class="btn btn-new" id="winPlayBtn">▶ Play Again</button>
     </div>
-    <div class="overlay" id="loseOverlay">
+    <div class="overlay" id="loseOverlay" aria-live="assertive">
       <h2 class="lose-title">💥 Game Over</h2>
       <button class="btn btn-new" id="losePlayBtn">▶ Try Again</button>
     </div>
   </div>
   <div class="hud">
-    <div class="hud-mines"><div class="hud-label">Mines</div><div class="hud-value" id="minesDisplay">10</div></div>
-    <div class="hud-timer"><div class="hud-label">Time</div><div class="hud-value" id="timerDisplay">0s</div></div>
+    <div class="hud-mines"><div class="hud-label">Mines</div><div class="hud-value" id="minesDisplay" aria-live="polite">10</div></div>
+    <div class="hud-timer"><div class="hud-label">Time</div><div class="hud-value" id="timerDisplay" aria-live="polite">0s</div></div>
   </div>
   <div class="controls">
     <button class="btn btn-new" id="newBtn">🔄 New Game</button>

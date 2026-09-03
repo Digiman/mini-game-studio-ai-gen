@@ -33,6 +33,7 @@
     font-size: 1.8rem; user-select: none;
     transition: transform 0.2s, box-shadow 0.2s;
     border: 1px solid #2a2a4e;
+    touch-action: manipulation; -webkit-tap-highlight-color: transparent;
   }
   .card:hover { transform: scale(1.05); border-color: #555; }
   .card.flipped { background: #1a1a2e; transform: scale(1); }
@@ -79,6 +80,14 @@
     .card { font-size: 1.3rem; }
     .btn { font-size: 0.65rem; padding: 5px 10px; }
   }
+  :focus-visible { outline: 2px solid #00ffff; outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
 </style>
 </head>
 <body>
@@ -87,16 +96,16 @@
   <p class="subtitle">Flip · match · remember</p>
   <div class="game-wrapper">
     <div class="grid" id="grid"></div>
-    <div class="overlay" id="winOverlay">
+    <div class="overlay" id="winOverlay" aria-live="assertive">
       <h2 class="win-title">🎉 You Win!</h2>
       <p>Completed in <span id="finalMoves">0</span> moves · <span id="finalTime">0s</span></p>
       <button class="btn btn-new" id="winPlayBtn">▶ Play Again</button>
     </div>
   </div>
   <div class="hud">
-    <div class="hud-moves"><div class="hud-label">Moves</div><div class="hud-value" id="movesDisplay">0</div></div>
-    <div class="hud-pairs"><div class="hud-label">Pairs</div><div class="hud-value" id="pairsDisplay">0/8</div></div>
-    <div class="hud-timer"><div class="hud-label">Time</div><div class="hud-value" id="timerDisplay">0s</div></div>
+    <div class="hud-moves"><div class="hud-label">Moves</div><div class="hud-value" id="movesDisplay" aria-live="polite">0</div></div>
+    <div class="hud-pairs"><div class="hud-label">Pairs</div><div class="hud-value" id="pairsDisplay" aria-live="polite">0/8</div></div>
+    <div class="hud-timer"><div class="hud-label">Time</div><div class="hud-value" id="timerDisplay" aria-live="polite">0s</div></div>
   </div>
   <div class="controls">
     <button class="btn btn-new" id="newBtn">🔄 New Game</button>

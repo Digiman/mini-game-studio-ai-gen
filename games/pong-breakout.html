@@ -48,6 +48,36 @@
   .overlay p span { color: #ffcc00; font-weight: 700; }
   .key-hint { font-size: 0.55rem; color: #444; margin-top: 4px; }
   .key-hint kbd { background: #14142a; padding: 1px 5px; border-radius: 3px; border: 1px solid #333; font-family: inherit; color: #777; }
+  .touch-pad {
+    display: grid;
+    grid-template-columns: repeat(3, 44px);
+    gap: 6px;
+    justify-content: center;
+    margin-top: 8px;
+  }
+  .touch-btn {
+    width: 44px; height: 44px;
+    background: rgba(30, 30, 48, 0.8);
+    border: 1px solid rgba(0, 255, 255, 0.35);
+    border-radius: 10px;
+    color: #00ffff;
+    font-size: 0.95rem;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+  }
+  .touch-btn:active { background: rgba(0, 255, 255, 0.25); }
+
+  :focus-visible { outline: 2px solid #00ffff; outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
 </style>
 </head>
 <body>
@@ -68,12 +98,17 @@
     </div>
   </div>
   <div class="hud">
-    <div class="hud-score"><div class="hud-label">Score</div><div class="hud-value" id="scoreDisplay">0</div></div>
-    <div class="hud-lives"><div class="hud-label">Lives</div><div class="hud-value" id="livesDisplay">❤❤❤</div></div>
-    <div class="hud-high"><div class="hud-label">High</div><div class="hud-value" id="highDisplay">0</div></div>
+    <div class="hud-score"><div class="hud-label">Score</div><div class="hud-value" id="scoreDisplay" aria-live="polite">0</div></div>
+    <div class="hud-lives"><div class="hud-label">Lives</div><div class="hud-value" id="livesDisplay" aria-live="polite">❤❤❤</div></div>
+    <div class="hud-high"><div class="hud-label">High</div><div class="hud-value" id="highDisplay" aria-live="polite">0</div></div>
   </div>
   <div class="controls">
     <button class="btn btn-mode" id="modeBtn">🔄 Breakout</button>
+  </div>
+  <div class="touch-pad">
+    <button id="touchLeft" class="touch-btn">◀</button>
+    <button id="touchLaunch" class="touch-btn">🚀</button>
+    <button id="touchRight" class="touch-btn">▶</button>
   </div>
   <div class="key-hint"><kbd>←</kbd> <kbd>→</kbd> move paddle · <kbd>Space</kbd> launch</div>
 </div>
@@ -90,6 +125,32 @@ const startOverlay = document.getElementById('startOverlay');
 const gameOverOverlay = document.getElementById('gameOverOverlay');
 const startBtn = document.getElementById('startBtn');
 const restartBtn = document.getElementById('restartBtn');
+
+// ── SFX (inline, copied per game: lazy AudioContext + tiny synth) ──
+let sfxCtx = null;
+function sfx(type) {
+  try {
+    if (!sfxCtx) sfxCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (sfxCtx.state === 'suspended') sfxCtx.resume();
+    const t = sfxCtx.currentTime;
+    const o = sfxCtx.createOscillator();
+    const g = sfxCtx.createGain();
+    const defs = {
+      move:  { type: 'square',  freq: 220, dur: 0.06, vol: 0.03 },
+      score: { type: 'triangle',freq: 660, dur: 0.10, vol: 0.05 },
+      clear: { type: 'sawtooth',freq: 520, dur: 0.08, vol: 0.04 },
+      hit:   { type: 'square',  freq: 140, dur: 0.10, vol: 0.06 },
+      lose:  { type: 'sawtooth',freq: 180, dur: 0.25, vol: 0.06 },
+      win:   { type: 'triangle',freq: 880, dur: 0.20, vol: 0.06 },
+    };
+    const d = defs[type] || defs.move;
+    o.type = d.type; o.frequency.value = d.freq;
+    g.gain.setValueAtTime(d.vol, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + d.dur);
+    o.connect(g); g.connect(sfxCtx.destination);
+    o.start(t); o.stop(t + d.dur + 0.02);
+  } catch (e) { /* audio unavailable */ }
+}
 
 let mode = 'breakout'; // 'pong' or 'breakout'
 let highScore = parseInt(localStorage.getItem('mg_pong_breakout_high') || localStorage.getItem('pong_high') || '0', 10);
@@ -188,6 +249,7 @@ function loop() {
     if (ball.y + ball.r > H) {
       if (mode === 'breakout') {
         lives--; updateLives();
+        sfx('lose');
         if (lives <= 0) { gameOver(); draw(); return; }
         ball.x = 300; ball.y = 360; launched = false;
         ball.dx = 0; ball.dy = 0;
@@ -209,6 +271,7 @@ function loop() {
     // Paddle collision
     if (ball.dy > 0 && ball.y + ball.r > paddle.y && ball.y + ball.r < paddle.y + paddle.h + 5 &&
         ball.x > paddle.x - ball.r && ball.x < paddle.x + paddle.w + ball.r) {
+      sfx('score');
       ball.dy = -ball.dy;
       const hit = (ball.x - paddle.x) / paddle.w - 0.5;
       ball.dx = hit * 2.5;
@@ -234,6 +297,7 @@ function loop() {
         if (ball.x + ball.r > b.x && ball.x - ball.r < b.x + b.w &&
             ball.y + ball.r > b.y && ball.y - ball.r < b.y + b.h) {
           b.alive = false;
+          sfx('hit');
           // Flip the axis with the smaller penetration, and push the ball out
           // of the brick so it can't be re-hit on the next frame.
           const overlapX = Math.min(ball.x + ball.r - b.x, b.x + b.w - (ball.x - ball.r));
@@ -328,6 +392,19 @@ modeBtn.addEventListener('click', () => {
 
 startBtn.addEventListener('click', initGame);
 restartBtn.addEventListener('click', initGame);
+
+// ── Touch controls (mobile) ──
+function touchAction(btnId, down, up) {
+  const el = document.getElementById(btnId);
+  if (!el) return;
+  el.addEventListener('touchstart', (e) => { e.preventDefault(); if (down) down(); }, { passive: false });
+  el.addEventListener('touchend',   (e) => { e.preventDefault(); if (up) up(); }, { passive: false });
+  el.addEventListener('touchcancel',(e) => { e.preventDefault(); if (up) up(); }, { passive: false });
+}
+
+touchAction('touchLeft',  () => { keys.left = true; },  () => { keys.left = false; });
+touchAction('touchRight', () => { keys.right = true; }, () => { keys.right = false; });
+touchAction('touchLaunch', () => { if (gameRunning && !launched && mode === 'breakout') launchBall(); });
 
 // Polyfill roundRect
 if (!CanvasRenderingContext2D.prototype.roundRect) {
