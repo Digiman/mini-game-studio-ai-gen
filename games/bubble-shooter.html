@@ -51,7 +51,15 @@
   .color-queue { display: flex; gap: 5px; align-items: center; }
   .queue-dot { width: 22px; height: 22px; border-radius: 50%; box-shadow: 0 0 8px currentColor; }
 
-  .controls { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 14px; }
+  .controls {
+    display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 14px;
+  }
+  .btn-power {
+    background: #3a1230; color: #ff66cc; border: 1px solid #ff66cc55;
+    font-weight: 700; font-size: 0.75rem;
+  }
+  .btn-power.on { background: #ff66cc; color: #0a0a12; box-shadow: 0 0 16px rgba(255,102,204,0.4); }
+  .btn-power:disabled { opacity: 0.4; cursor: default; }
 
   .btn {
     padding: 8px 20px; border: none; border-radius: 8px; font-size: 0.85rem; font-weight: 700;
@@ -126,6 +134,7 @@
   </div>
 
   <div class="controls">
+    <button class="btn btn-power" id="powerBtn" disabled>⚡ Rainbow Bomb (0)</button>
     <button class="btn btn-restart" id="restartBtn2">New Game</button>
   </div>
 
@@ -152,6 +161,7 @@ const scoreDisplay = document.getElementById('scoreDisplay');
 const highDisplay = document.getElementById('highDisplay');
 const levelDisplay = document.getElementById('levelDisplay');
 const queueEl = document.getElementById('queue');
+const powerBtn = document.getElementById('powerBtn');
 const finalScore = document.getElementById('finalScore');
 const finalBubbles = document.getElementById('finalBubbles');
 const newHighBadge = document.getElementById('newHighBadge');
@@ -169,6 +179,7 @@ let highScore = parseInt(localStorage.getItem('mg_bubble_shooter_high') || local
 if (highScore > 0 && !localStorage.getItem('mg_bubble_shooter_high') && localStorage.getItem('neon_bubble_high')) localStorage.setItem('mg_bubble_shooter_high', String(highScore)); // migrate legacy key
 let level = 1;
 let poppedTotal = 0;
+let powerCharges = 0; // rainbow-bomb charges
 let gameRunning = false;
 let gamePaused = false;
 let autoPaused = false; // pause triggered by the tab losing focus
@@ -317,6 +328,11 @@ function placeProjectile(){
   if(popped > 0){
     gained += popped * 10;
     poppedTotal += popped;
+    // Chains of 4+ pop a rainbow-bomb charge
+    if(popped >= 4){
+      powerCharges = Math.min(3, powerCharges + 1);
+      updatePowerUI();
+    }
   }
   const dropped = collectDrops();
   if(dropped > 0){ gained += dropped * 5; poppedTotal += dropped; }
@@ -381,6 +397,34 @@ function checkCeilingOver(){
     if(cellPos(c, r).y >= dangerY) return true;
   }
   return false;
+}
+
+// ─── Rainbow Bomb power-up ───────────────────────────────────────────────────
+function updatePowerUI(){
+  powerBtn.disabled = powerCharges <= 0;
+  powerBtn.textContent = `⚡ Rainbow Bomb (${powerCharges})`;
+  powerBtn.classList.toggle('on', powerCharges > 0);
+}
+
+function firePower(){
+  if(!gameRunning || powerCharges <= 0) return;
+  const col = queue[0];
+  let removed = 0;
+  for(const key in grid){
+    if(grid[key] === col){
+      delete grid[key];
+      removed++;
+    }
+  }
+  if(removed > 0){
+    poppedTotal += removed;
+    score += removed * 10;
+  }
+  powerCharges--;
+  updatePowerUI();
+  updateHUD();
+  if(checkCeilingOver()) gameOver();
+  draw();
 }
 
 // ─── HUD ─────────────────────────────────────────────────────────────────────
@@ -480,6 +524,8 @@ document.addEventListener('visibilitychange', () => {
 function startGame(){
   startLevel(1);
   score = 0; poppedTotal = 0;
+  powerCharges = 0;
+  updatePowerUI();
   updateHUD();
   startOverlay.classList.remove('active');
   gameOverOverlay.classList.remove('active');
@@ -543,6 +589,7 @@ document.addEventListener('keydown', (e) => {
 document.getElementById('startBtn').addEventListener('click', startGame);
 document.getElementById('restartBtn').addEventListener('click', startGame);
 document.getElementById('restartBtn2').addEventListener('click', startGame);
+powerBtn.addEventListener('click', firePower);
 
 // ─── Initial draw ────────────────────────────────────────────────────────────
 startLevel(1);

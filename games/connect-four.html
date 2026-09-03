@@ -32,6 +32,11 @@
   .btn:active { transform: scale(0.95); }
   .btn-new { background: #ff8800; color: #0a0a12; }
   .btn-mode { background: #6600ff; color: #fff; }
+  .diff-label { font-size: 0.7rem; color: #888; font-weight: 600; display: inline-flex; align-items: center; }
+  .diff-select {
+    background: #14142a; color: #ddd; border: 1px solid #333; border-radius: 6px;
+    padding: 5px 8px; font-size: 0.7rem; cursor: pointer;
+  }
   .overlay {
     position: absolute; inset: 8px; border-radius: 8px; display: flex; flex-direction: column;
     align-items: center; justify-content: center; background: rgba(10,10,18,0.88);
@@ -73,6 +78,12 @@
   <div class="controls">
     <button class="btn btn-new" id="newBtn">🔄 New Game</button>
     <button class="btn btn-mode" id="modeBtn">🤖 vs AI</button>
+    <label class="diff-label" for="diffSelect">AI</label>
+    <select id="diffSelect" class="diff-select" aria-label="AI difficulty">
+      <option value="1">🌱 Easy</option>
+      <option value="2">😎 Medium</option>
+      <option value="4" selected>🔥 Hard</option>
+    </select>
   </div>
   <div class="key-hint"><kbd>1</kbd>-<kbd>7</kbd> drop in column · <kbd>R</kbd> restart</div>
 </div>
@@ -89,6 +100,7 @@ const resultTitle = document.getElementById('resultTitle');
 const playAgainBtn = document.getElementById('playAgainBtn');
 const newBtn = document.getElementById('newBtn');
 const modeBtn = document.getElementById('modeBtn');
+const diffSelect = document.getElementById('diffSelect');
 
 let board = Array.from({length: ROWS}, () => Array(COLS).fill(0));
 let turn = 1; // 1=player, 2=AI
@@ -96,6 +108,7 @@ let moves = 0;
 let gameOver = false;
 let vsAI = true;
 let animating = false;
+let aiDepth = 4; // controlled by the difficulty selector
 
 function resetGame() {
   board = Array.from({length: ROWS}, () => Array(COLS).fill(0));
@@ -169,7 +182,7 @@ function aiMove() {
     if (board[0][c] !== 0) continue;
     let r = ROWS-1; while (r >= 0 && board[r][c] !== 0) r--;
     board[r][c] = 2;
-    const score = minimax(board, 4, false, -Infinity, Infinity);
+    const score = minimax(board, aiDepth, false, -Infinity, Infinity);
     board[r][c] = 0;
     if (score > bestScore) { bestScore = score; bestCol = c; }
   }
@@ -285,6 +298,14 @@ playAgainBtn.addEventListener('click', resetGame);
 modeBtn.addEventListener('click', () => {
   vsAI = !vsAI;
   modeBtn.textContent = vsAI ? '🤖 vs AI' : '👥 2 Players';
+  resetGame();
+});
+diffSelect.addEventListener('change', () => {
+  aiDepth = parseInt(diffSelect.value, 10);
+  if (!vsAI) {
+    vsAI = true;
+    modeBtn.textContent = '🤖 vs AI';
+  }
   resetGame();
 });
 
