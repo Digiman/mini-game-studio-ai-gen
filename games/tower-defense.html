@@ -95,10 +95,41 @@
   .overlay p.help { font-size: 0.8rem; color: #777; margin-bottom: 4px; }
   .overlay .high-score { font-size: 0.8rem; color: #666; margin-bottom: 16px; }
 
+  .touch-pad {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    margin-top: 10px;
+  }
+  .touch-btn {
+    width: 44px; height: 44px;
+    background: rgba(30, 30, 48, 0.8);
+    border: 1px solid rgba(255, 204, 0, 0.4);
+    border-radius: 10px;
+    color: #ffcc00;
+    font-size: 0.95rem;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+  }
+  .touch-btn:active { background: rgba(255, 204, 0, 0.25); }
+
   @media (max-width: 560px) {
     .overlay h2 { font-size: 1.6rem; }
     .btn { padding: 6px 14px; font-size: 0.8rem; }
   }
+
+  :focus-visible { outline: 2px solid #00ffff; outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
 </style>
 </head>
 <body>
@@ -135,12 +166,12 @@
 
   <div class="hud">
     <div class="hud-left">
-      <div class="hud-gold"><div class="hud-label">Gold</div><div class="hud-value" id="goldDisplay">100</div></div>
-      <div class="hud-lives"><div class="hud-label">Lives</div><div class="hud-value" id="livesDisplay">20</div></div>
+      <div class="hud-gold"><div class="hud-label">Gold</div><div class="hud-value" id="goldDisplay" aria-live="polite">100</div></div>
+      <div class="hud-lives"><div class="hud-label">Lives</div><div class="hud-value" id="livesDisplay" aria-live="polite">20</div></div>
     </div>
     <div class="hud-right">
-      <div class="hud-wave"><div class="hud-label">Wave</div><div class="hud-value" id="waveDisplay">0/20</div></div>
-      <div class="hud-kills"><div class="hud-label">Kills</div><div class="hud-value" id="killsDisplay">0</div></div>
+      <div class="hud-wave"><div class="hud-label">Wave</div><div class="hud-value" id="waveDisplay" aria-live="polite">0/20</div></div>
+      <div class="hud-kills"><div class="hud-label">Kills</div><div class="hud-value" id="killsDisplay" aria-live="polite">0</div></div>
     </div>
   </div>
 
@@ -150,6 +181,14 @@
     <div class="td-btn" data-type="sniper" id="tb-sniper">🎯 Sniper<span class="cost">$100</span></div>
     <div class="td-btn" data-type="cannon" id="tb-cannon">💥 Cannon<span class="cost">$140</span></div>
     <button class="btn btn-sell td-btn" id="sellBtn" title="Switch to sell/upgrade select mode">💲 Sell/Upgrade</button>
+  </div>
+
+  <div class="touch-pad">
+    <button id="touchGun" class="touch-btn">🔫</button>
+    <button id="touchFrost" class="touch-btn">❄</button>
+    <button id="touchSniper" class="touch-btn">🎯</button>
+    <button id="touchCannon" class="touch-btn">💥</button>
+    <button id="touchSell" class="touch-btn">💲</button>
   </div>
 
   <div class="controls">
@@ -198,6 +237,32 @@ const startOverlay = document.getElementById('startOverlay');
 const gameOverOverlay = document.getElementById('gameOverOverlay');
 const winOverlay = document.getElementById('winOverlay');
 const toolbar = document.getElementById('toolbar');
+
+// ── SFX (inline, copied per game: lazy AudioContext + tiny synth) ──
+let sfxCtx = null;
+function sfx(type) {
+  try {
+    if (!sfxCtx) sfxCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (sfxCtx.state === 'suspended') sfxCtx.resume();
+    const t = sfxCtx.currentTime;
+    const o = sfxCtx.createOscillator();
+    const g = sfxCtx.createGain();
+    const defs = {
+      move:  { type: 'square',  freq: 220, dur: 0.06, vol: 0.03 },
+      score: { type: 'triangle',freq: 660, dur: 0.10, vol: 0.05 },
+      clear: { type: 'sawtooth',freq: 520, dur: 0.08, vol: 0.04 },
+      hit:   { type: 'square',  freq: 140, dur: 0.10, vol: 0.06 },
+      lose:  { type: 'sawtooth',freq: 180, dur: 0.25, vol: 0.06 },
+      win:   { type: 'triangle',freq: 880, dur: 0.20, vol: 0.06 },
+    };
+    const d = defs[type] || defs.move;
+    o.type = d.type; o.frequency.value = d.freq;
+    g.gain.setValueAtTime(d.vol, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + d.dur);
+    o.connect(g); g.connect(sfxCtx.destination);
+    o.start(t); o.stop(t + d.dur + 0.02);
+  } catch (e) { /* audio unavailable */ }
+}
 
 // ─── Path geometry (pixel waypoints) ────────────────────────────────────────
 let pathPoints = [];
@@ -298,6 +363,7 @@ function updateWave(dt) {
   }
   if (waveQueue.length === 0 && enemies.length === 0) {
     spawning = false;
+    sfx('clear');
     if (wave >= TOTAL_WAVES) { winGame(); }
     else {
       gold += 25 + wave * 5;
@@ -365,6 +431,7 @@ function updateTowers(dt) {
     }
     if (!target) continue;
     t.cooldown = def.rate;
+    sfx('hit');
     const dmg = def.damage * bonus;
     if (def.splash) {
       projectiles.push({ x: t.x * CELL + CELL / 2, y: t.y * CELL + CELL / 2, target, speed: 320, dmg, splash: def.splash, color: def.color, type: t.type });
@@ -667,6 +734,24 @@ document.addEventListener('keydown', (e) => {
 document.getElementById('startBtn').addEventListener('click', startGame);
 document.getElementById('restartBtn').addEventListener('click', startGame);
 document.getElementById('restartBtn2').addEventListener('click', startGame);
+
+// ── Touch controls (mobile) ──
+function touchAction(btnId, down, up) {
+  const el = document.getElementById(btnId);
+  if (!el) return;
+  el.addEventListener('touchstart', (e) => { e.preventDefault(); if (down) down(); }, { passive: false });
+  el.addEventListener('touchend',   (e) => { e.preventDefault(); if (up) up(); }, { passive: false });
+  el.addEventListener('touchcancel',(e) => { e.preventDefault(); if (up) up(); }, { passive: false });
+}
+
+const touchMap = { touchGun: 'gun', touchFrost: 'frost', touchSniper: 'sniper', touchCannon: 'cannon', touchSell: 'sell' };
+for (const [id, type] of Object.entries(touchMap)) {
+  touchAction(id, () => {
+    selectedTower = null;
+    selectedType = selectedType === type ? null : type;
+    updateToolbar(); draw();
+  });
+}
 
 // Initial draw
 updateHUD();

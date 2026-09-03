@@ -109,12 +109,44 @@
   .overlay .line-total { font-size: 0.8rem; color: #666; margin-bottom: 16px; }
   .overlay .line-total span { color: #66ff88; }
 
+  .touch-pad {
+    display: grid;
+    grid-template-columns: repeat(3, 44px);
+    gap: 6px;
+    justify-content: center;
+    justify-items: center;
+    margin-top: 10px;
+  }
+  .touch-btn {
+    width: 44px; height: 44px;
+    background: rgba(30, 30, 48, 0.8);
+    border: 1px solid rgba(0, 255, 255, 0.35);
+    border-radius: 10px;
+    color: #00ffff;
+    font-size: 0.95rem;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+  }
+  .touch-btn:active { background: rgba(0, 255, 255, 0.25); }
+
   @media (max-width: 560px) {
     .game-layout { flex-direction: column; align-items: center; }
     .side-panel { flex-direction: row; width: 100%; justify-content: center; gap: 10px; }
     .overlay h2 { font-size: 1.6rem; }
     .btn { padding: 6px 14px; font-size: 0.8rem; }
   }
+
+  :focus-visible { outline: 2px solid #00ffff; outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
 </style>
 </head>
 <body>
@@ -154,9 +186,9 @@
 
     <div class="side-panel">
       <div class="panel-box stats">
-        <div class="stat-row stat-score"><span class="k">Score</span><span class="v" id="scoreDisplay">0</span></div>
-        <div class="stat-row stat-high"><span class="k">Best</span><span class="v" id="highDisplay">0</span></div>
-        <div class="stat-row stat-level"><span class="k">Level</span><span class="v" id="levelDisplay">1</span></div>
+        <div class="stat-row stat-score"><span class="k">Score</span><span class="v" id="scoreDisplay" aria-live="polite">0</span></div>
+        <div class="stat-row stat-high"><span class="k">Best</span><span class="v" id="highDisplay" aria-live="polite">0</span></div>
+        <div class="stat-row stat-level"><span class="k">Level</span><span class="v" id="levelDisplay" aria-live="polite">1</span></div>
         <div class="stat-row stat-lines"><span class="k">Lines</span><span class="v" id="linesDisplay">0</span></div>
       </div>
       <div class="panel-box">
@@ -174,6 +206,15 @@
 
   <div class="controls">
     <button class="btn btn-start" id="restartBtn2">Restart</button>
+  </div>
+
+  <div class="touch-pad">
+    <button id="touchLeft" class="touch-btn">◀</button>
+    <button id="touchRight" class="touch-btn">▶</button>
+    <button id="touchRotate" class="touch-btn">⟳</button>
+    <button id="touchDown" class="touch-btn">⤓</button>
+    <button id="touchHard" class="touch-btn">⤓⤓</button>
+    <button id="touchPause" class="touch-btn">⏯</button>
   </div>
 
   <div class="key-hint">
@@ -222,6 +263,32 @@ const finalLines = document.getElementById('finalLines');
 const newHighBadge = document.getElementById('newHighBadge');
 const startOverlay = document.getElementById('startOverlay');
 const gameOverOverlay = document.getElementById('gameOverOverlay');
+
+// ── SFX (inline, copied per game: lazy AudioContext + tiny synth) ──
+let sfxCtx = null;
+function sfx(type) {
+  try {
+    if (!sfxCtx) sfxCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (sfxCtx.state === 'suspended') sfxCtx.resume();
+    const t = sfxCtx.currentTime;
+    const o = sfxCtx.createOscillator();
+    const g = sfxCtx.createGain();
+    const defs = {
+      move:  { type: 'square',  freq: 220, dur: 0.06, vol: 0.03 },
+      score: { type: 'triangle',freq: 660, dur: 0.10, vol: 0.05 },
+      clear: { type: 'sawtooth',freq: 520, dur: 0.08, vol: 0.04 },
+      hit:   { type: 'square',  freq: 140, dur: 0.10, vol: 0.06 },
+      lose:  { type: 'sawtooth',freq: 180, dur: 0.25, vol: 0.06 },
+      win:   { type: 'triangle',freq: 880, dur: 0.20, vol: 0.06 },
+    };
+    const d = defs[type] || defs.move;
+    o.type = d.type; o.frequency.value = d.freq;
+    g.gain.setValueAtTime(d.vol, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + d.dur);
+    o.connect(g); g.connect(sfxCtx.destination);
+    o.start(t); o.stop(t + d.dur + 0.02);
+  } catch (e) { /* audio unavailable */ }
+}
 
 // ─── Game State ─────────────────────────────────────────────────────────────
 let grid = [];
@@ -302,6 +369,7 @@ function clearLines() {
     }
   }
   if (cleared) {
+    sfx('clear');
     score += LINE_POINTS[cleared] * level;
     lines += cleared;
     const newLevel = Math.floor(lines / 10) + 1;
@@ -360,6 +428,7 @@ function move(dx, dy) {
   if (!collides(test, grid)) {
     current.x += dx; current.y += dy;
     updateGhost();
+    sfx('move');
     return true;
   }
   if (dy > 0) lockPiece();
@@ -419,6 +488,7 @@ function hold() {
 function gameOver() {
   if (!gameRunning) return;
   gameRunning = false;
+  sfx('lose');
   if (gameLoopId) { clearInterval(gameLoopId); gameLoopId = null; }
   finalScore.textContent = score;
   finalLines.textContent = lines;
@@ -595,6 +665,22 @@ document.addEventListener('keydown', (e) => {
 document.getElementById('startBtn').addEventListener('click', startGame);
 document.getElementById('restartBtn').addEventListener('click', startGame);
 document.getElementById('restartBtn2').addEventListener('click', startGame);
+
+// ── Touch controls (mobile) ──
+function touchAction(btnId, down, up) {
+  const el = document.getElementById(btnId);
+  if (!el) return;
+  el.addEventListener('touchstart', (e) => { e.preventDefault(); if (down) down(); }, { passive: false });
+  el.addEventListener('touchend',   (e) => { e.preventDefault(); if (up) up(); }, { passive: false });
+  el.addEventListener('touchcancel',(e) => { e.preventDefault(); if (up) up(); }, { passive: false });
+}
+
+touchAction('touchLeft',   () => { if (gameRunning && !gamePaused) { move(-1, 0); drawBoard(); } });
+touchAction('touchRight',  () => { if (gameRunning && !gamePaused) { move(1, 0); drawBoard(); } });
+touchAction('touchRotate', () => { if (gameRunning && !gamePaused) { rotate(); drawBoard(); } });
+touchAction('touchDown',   () => { if (gameRunning && !gamePaused) { move(0, 1); lastDrop = performance.now(); drawBoard(); } });
+touchAction('touchHard',   () => { if (gameRunning && !gamePaused) { hardDrop(); } });
+touchAction('touchPause',  () => { togglePause(); });
 
 // ─── Initial draw ───────────────────────────────────────────────────────────
 resetGame();

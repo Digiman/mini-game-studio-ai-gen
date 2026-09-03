@@ -54,7 +54,42 @@
   .overlay .win-title { background: linear-gradient(90deg, #ffcc00, #66ff88); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
   .key-hint { font-size: 0.55rem; color: #444; margin-top: 4px; }
   .key-hint kbd { background: #14142a; padding: 1px 5px; border-radius: 3px; border: 1px solid #333; font-family: inherit; color: #777; }
+  .touch-pad {
+    display: grid;
+    grid-template-columns: repeat(3, 44px);
+    grid-template-rows: repeat(2, 44px);
+    gap: 6px;
+    justify-content: center;
+    margin-top: 8px;
+  }
+  .touch-btn {
+    width: 44px; height: 44px;
+    background: rgba(30, 30, 48, 0.8);
+    border: 1px solid rgba(102, 255, 136, 0.35);
+    border-radius: 10px;
+    color: #66ff88;
+    font-size: 0.95rem;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+  }
+  .touch-btn:active { background: rgba(102, 255, 136, 0.25); }
+  #touchUp    { grid-column: 2; grid-row: 1; }
+  #touchLeft  { grid-column: 1; grid-row: 2; }
+  #touchDown  { grid-column: 2; grid-row: 2; }
+  #touchRight { grid-column: 3; grid-row: 2; }
   @media (max-width: 500px) { .cell { width: 32px; height: 32px; font-size: 1rem; } }
+
+  :focus-visible { outline: 2px solid #00ffff; outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
 </style>
 </head>
 <body>
@@ -69,14 +104,20 @@
     </div>
   </div>
   <div class="hud">
-    <div class="hud-level"><div class="hud-label">Level</div><div class="hud-value" id="levelDisplay">1/5</div></div>
-    <div class="hud-moves"><div class="hud-label">Moves</div><div class="hud-value" id="movesDisplay">0</div></div>
+    <div class="hud-level"><div class="hud-label">Level</div><div class="hud-value" id="levelDisplay" aria-live="polite">1/5</div></div>
+    <div class="hud-moves"><div class="hud-label">Moves</div><div class="hud-value" id="movesDisplay" aria-live="polite">0</div></div>
   </div>
   <div class="controls">
     <button class="btn btn-undo" id="undoBtn">↩ Undo</button>
     <button class="btn btn-reset" id="resetBtn">🔄 Reset</button>
     <button class="btn btn-prev" id="prevBtn">◀ Prev</button>
     <button class="btn btn-next" id="nextBtn2">Next ▶</button>
+  </div>
+  <div class="touch-pad">
+    <button id="touchUp" class="touch-btn">▲</button>
+    <button id="touchLeft" class="touch-btn">◀</button>
+    <button id="touchDown" class="touch-btn">▼</button>
+    <button id="touchRight" class="touch-btn">▶</button>
   </div>
   <div class="key-hint"><kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd> or <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> move · <kbd>Z</kbd> undo · <kbd>R</kbd> reset</div>
 </div>
@@ -132,6 +173,32 @@ const prevBtn = document.getElementById('prevBtn');
 const nextBtn = document.getElementById('nextBtn2');
 const winOverlay = document.getElementById('winOverlay');
 const nextBtnWin = document.getElementById('nextBtn');
+
+// ── SFX (inline, copied per game: lazy AudioContext + tiny synth) ──
+let sfxCtx = null;
+function sfx(type) {
+  try {
+    if (!sfxCtx) sfxCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (sfxCtx.state === 'suspended') sfxCtx.resume();
+    const t = sfxCtx.currentTime;
+    const o = sfxCtx.createOscillator();
+    const g = sfxCtx.createGain();
+    const defs = {
+      move:  { type: 'square',  freq: 220, dur: 0.06, vol: 0.03 },
+      score: { type: 'triangle',freq: 660, dur: 0.10, vol: 0.05 },
+      clear: { type: 'sawtooth',freq: 520, dur: 0.08, vol: 0.04 },
+      hit:   { type: 'square',  freq: 140, dur: 0.10, vol: 0.06 },
+      lose:  { type: 'sawtooth',freq: 180, dur: 0.25, vol: 0.06 },
+      win:   { type: 'triangle',freq: 880, dur: 0.20, vol: 0.06 },
+    };
+    const d = defs[type] || defs.move;
+    o.type = d.type; o.frequency.value = d.freq;
+    g.gain.setValueAtTime(d.vol, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + d.dur);
+    o.connect(g); g.connect(sfxCtx.destination);
+    o.start(t); o.stop(t + d.dur + 0.02);
+  } catch (e) { /* audio unavailable */ }
+}
 
 let currentLevel = 0, board = [], player = {r:0,c:0}, goals = [];
 let moves = 0, history = [];
@@ -203,12 +270,14 @@ function move(dr, dc) {
     board[br][bc] = '$';
     player.r = nr; player.c = nc;
     moves++; movesDisplay.textContent = moves;
+    sfx('move');
     checkWin();
     render();
   } else {
     history.push({r:player.r,c:player.c,br:-1,bc:-1});
     player.r = nr; player.c = nc;
     moves++; movesDisplay.textContent = moves;
+    sfx('move');
     render();
   }
 }
@@ -228,6 +297,7 @@ function undo() {
 
 function checkWin() {
   for (const g of goals) if (board[g.r][g.c] !== '$') return;
+  sfx('win');
   winOverlay.classList.add('active');
 }
 
@@ -247,6 +317,20 @@ prevBtn.addEventListener('click', () => loadLevel(currentLevel - 1));
 nextBtn.addEventListener('click', () => loadLevel(currentLevel + 1));
 nextBtn2.addEventListener('click', () => loadLevel(currentLevel + 1));
 nextBtnWin.addEventListener('click', () => loadLevel(currentLevel + 1));
+
+// ── Touch controls (mobile) ──
+function touchAction(btnId, down, up) {
+  const el = document.getElementById(btnId);
+  if (!el) return;
+  el.addEventListener('touchstart', (e) => { e.preventDefault(); if (down) down(); }, { passive: false });
+  el.addEventListener('touchend',   (e) => { e.preventDefault(); if (up) up(); }, { passive: false });
+  el.addEventListener('touchcancel',(e) => { e.preventDefault(); if (up) up(); }, { passive: false });
+}
+
+touchAction('touchUp',    () => move(-1, 0));
+touchAction('touchDown',  () => move(1, 0));
+touchAction('touchLeft',  () => move(0, -1));
+touchAction('touchRight', () => move(0, 1));
 
 loadLevel(0);
 </script>
