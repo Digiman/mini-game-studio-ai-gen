@@ -120,19 +120,22 @@
   .header .count { color: var(--header-count); font-size: 0.8rem; margin-top: 4px; transition: color 0.3s; }
   .header .count span { color: #ffcc00; font-weight: 700; }
 
-  /* ── Theme toggle ── */
-  .theme-toggle {
-    position: absolute; top: 16px; right: 20px;
-    width: 40px; height: 40px; border-radius: 50%;
-    border: 1px solid var(--toggle-border);
-    background: var(--toggle-bg);
-    color: var(--toggle-text);
-    font-size: 1.2rem; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    transition: background 0.3s, color 0.3s, border-color 0.3s, transform 0.2s;
+  /* ── Theme switch ── */
+  .theme-switch {
+    position: absolute; top: 14px; right: 20px;
+    display: flex; border: 1px solid var(--toggle-border);
+    border-radius: 20px; overflow: hidden; background: var(--toggle-bg);
+    transition: background 0.3s, border-color 0.3s;
   }
-  .theme-toggle:hover { background: var(--toggle-hover-bg); transform: scale(1.1); }
-  .theme-toggle:active { transform: scale(0.9); }
+  .theme-opt {
+    padding: 6px 12px; font-size: 0.7rem; font-weight: 600;
+    letter-spacing: 0.5px; text-transform: uppercase;
+    background: transparent; color: var(--toggle-text);
+    border: none; cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  }
+  .theme-opt:hover { background: var(--toggle-hover-bg); color: #eee; }
+  .theme-opt.active { background: #ff8800; color: #fff; }
 
   /* ── Filter bar ── */
   .filter-bar {
@@ -219,15 +222,30 @@
   @media (max-width: 500px) {
     .header h1 { font-size: 1.5rem; }
     .grid { grid-template-columns: 1fr; padding: 16px; gap: 16px; }
-    .theme-toggle { top: 10px; right: 12px; width: 34px; height: 34px; font-size: 1rem; }
+    .theme-switch { top: 10px; right: 12px; }
+    .theme-opt { padding: 4px 8px; font-size: 0.6rem; }
     .filter-bar { padding: 8px 12px; gap: 4px; }
     .filter-btn { font-size: 0.6rem; padding: 4px 10px; }
   }
 </style>
 </head>
 <body>
+<script>
+  // Apply the saved theme before first paint to avoid a flash of the wrong colors.
+  (function () {
+    var p = localStorage.getItem('mg_theme') || localStorage.getItem('theme') || localStorage.getItem('docs_theme');
+    var dark = p
+      ? (p === 'dark' || (p === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches))
+      : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    document.body.classList.toggle('light', !dark);
+  })();
+</script>
 <div class="header">
-  <button class="theme-toggle" id="themeToggle" title="Toggle theme">🌙</button>
+  <div class="theme-switch" id="themeSwitch" role="group" aria-label="Color theme">
+    <button type="button" class="theme-opt" data-theme="system">System</button>
+    <button type="button" class="theme-opt" data-theme="light">Light</button>
+    <button type="button" class="theme-opt" data-theme="dark">Dark</button>
+  </div>
   <h1>🎮 Mini Game Studio</h1>
   <p>A collection of single-file HTML/JS games &amp; tools</p>
   <div class="count"><span id="totalCount">22</span> projects · no dependencies · no build</div>
@@ -565,23 +583,27 @@
 </div>
 
 <script>
-  // ── Theme toggle ──
-  const toggle = document.getElementById('themeToggle');
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  let theme = localStorage.getItem('theme') || (prefersDark ? 'dark' : 'light');
+  // ── Theme (system / light / dark) ──
+  const themeSwitch = document.getElementById('themeSwitch');
+  const themeBtns = themeSwitch.querySelectorAll('.theme-opt');
+  const darkMQ = window.matchMedia('(prefers-color-scheme: dark)');
+  let theme = localStorage.getItem('mg_theme') || localStorage.getItem('theme') || localStorage.getItem('docs_theme') || (darkMQ.matches ? 'dark' : 'light');
 
   function applyTheme(t) {
-    if (t === 'light') {
-      document.body.classList.add('light');
-      toggle.textContent = '☀️';
-    } else {
-      document.body.classList.remove('light');
-      toggle.textContent = '🌙';
-    }
-    localStorage.setItem('theme', t);
+    theme = t;
+    const isLight = t === 'light' || (t === 'system' && !darkMQ.matches);
+    document.body.classList.toggle('light', isLight);
+    themeBtns.forEach(b => {
+      const on = b.dataset.theme === t;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    localStorage.setItem('mg_theme', t);
   }
+  themeBtns.forEach(b => b.addEventListener('click', () => applyTheme(b.dataset.theme)));
+  // Follow OS changes live while in "system" mode
+  darkMQ.addEventListener('change', () => { if (theme === 'system') applyTheme('system'); });
   applyTheme(theme);
-  toggle.addEventListener('click', () => { theme = theme === 'dark' ? 'light' : 'dark'; applyTheme(theme); });
 
   // ── Category filter ──
   const cards = document.querySelectorAll('.card');
