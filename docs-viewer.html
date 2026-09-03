@@ -265,6 +265,15 @@
     display: inline-block; border: 1px solid var(--hr);
   }
 
+:focus-visible { outline: 2px solid #00ffff; outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
 @media (max-width: 600px) {
 	    .content { padding: 20px 16px 40px; font-size: 0.9rem; }
 	    .content h1 { font-size: 1.4rem; }
@@ -307,7 +316,7 @@
     </div>
   </div>
   <div class="layout">
-    <div class="content" id="content">
+    <div class="content" id="content" aria-live="polite">
       <div class="loading" id="loading">Loading documentation...</div>
     </div>
   </div>
