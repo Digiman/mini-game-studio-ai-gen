@@ -176,6 +176,8 @@ function minimax(b, depth, isMaximizing, alpha, beta) {
   }
   if (winner === 2) return 1000000;
   if (winner === 1) return -1000000;
+  // Full board with no winner: drawn position, score as neutral
+  if (b[0].every(cell => cell !== 0)) return 0;
   if (depth === 0) return evaluateBoard(b);
 
   if (isMaximizing) {

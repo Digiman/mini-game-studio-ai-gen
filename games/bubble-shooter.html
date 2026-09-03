@@ -142,7 +142,6 @@ const R = 20;                   // bubble radius
 const ROW_H = R * 2 * 0.87;     // vertical spacing between rows (~34.8)
 const COLS = 6;                 // 6 columns across, staggered hex grid
 const TOP_Y = 24;               // center y of the top row (grid hangs from ceiling)
-const CEILING_Y = TOP_Y + R;    // game-over threshold
 const SHOOTER_Y = BOARD_H - 50; // center y of the shooter at the bottom
 const COLORS = ['#00ffff','#ff4466','#ffcc00','#66ff88','#aa66ff','#ff66cc','#ff8800'];
 
@@ -166,10 +165,13 @@ let aimAngle = -Math.PI / 2;
 let projectile = null;   // {x, y, dx, dy, color}
 let queue = [];       // upcoming colors [current, next, ...]
 let score = 0;
-let highScore = parseInt(localStorage.getItem('neon_bubble_high') || '0', 10);
+let highScore = parseInt(localStorage.getItem('mg_bubble_shooter_high') || localStorage.getItem('neon_bubble_high') || '0', 10);
+if (highScore > 0 && !localStorage.getItem('mg_bubble_shooter_high') && localStorage.getItem('neon_bubble_high')) localStorage.setItem('mg_bubble_shooter_high', String(highScore)); // migrate legacy key
 let level = 1;
 let poppedTotal = 0;
 let gameRunning = false;
+let gamePaused = false;
+let autoPaused = false; // pause triggered by the tab losing focus
 let gameLoopId = null;
 
 highDisplay.textContent = highScore;
@@ -371,9 +373,12 @@ function collectDrops(){
 }
 
 function checkCeilingOver(){
+  // The pile grows downward toward the shooter: game over when any bubble
+  // reaches the shooter's line near the bottom of the board.
+  const dangerY = SHOOTER_Y + R;
   for(const key in grid){
     const [c, r] = key.split(',').map(Number);
-    if(cellPos(c, r).y <= CEILING_Y + R) return true;
+    if(cellPos(c, r).y >= dangerY) return true;
   }
   return false;
 }
@@ -429,10 +434,10 @@ function draw(){
   ctx.fillStyle = '#0e0e1c';
   ctx.fillRect(0, 0, BOARD_W, BOARD_H);
 
-  // danger / ceiling line
+  // danger line
   ctx.strokeStyle = 'rgba(255,68,102,0.25)';
   ctx.setLineDash([4, 4]);
-  ctx.beginPath(); ctx.moveTo(0, CEILING_Y); ctx.lineTo(BOARD_W, CEILING_Y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, SHOOTER_Y + R); ctx.lineTo(BOARD_W, SHOOTER_Y + R); ctx.stroke();
   ctx.setLineDash([]);
 
   // grid bubbles
@@ -455,10 +460,21 @@ function draw(){
 // ─── Game loop ───────────────────────────────────────────────────────────────
 function gameLoop(){
   if(!gameRunning) return;
+  if(gamePaused){ gameLoopId = requestAnimationFrame(gameLoop); return; }
   stepProjectile();
   draw();
   gameLoopId = requestAnimationFrame(gameLoop);
 }
+
+// Pause automatically when the tab loses focus; resume when it returns.
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    if (gameRunning && !gamePaused) { autoPaused = true; gamePaused = true; }
+  } else if (autoPaused) {
+    autoPaused = false;
+    gamePaused = false;
+  }
+});
 
 // ─── Start / Over ────────────────────────────────────────────────────────────
 function startGame(){
@@ -482,7 +498,7 @@ function gameOver(){
   let isNew = false;
   if(score > highScore){
     highScore = score;
-    localStorage.setItem('neon_bubble_high', String(highScore));
+    localStorage.setItem('mg_bubble_shooter_high', String(highScore));
     highDisplay.textContent = highScore;
     isNew = true;
   }

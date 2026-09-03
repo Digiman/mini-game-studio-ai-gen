@@ -169,13 +169,15 @@ let invDir = 1;
 let invStepTimer = 0;
 let wave = 1;
 let score = 0;
-let highScore = parseInt(localStorage.getItem('space_invaders_high') || '0', 10);
+let highScore = parseInt(localStorage.getItem('mg_space_invaders_high') || localStorage.getItem('space_invaders_high') || '0', 10);
+if (highScore > 0 && !localStorage.getItem('mg_space_invaders_high') && localStorage.getItem('space_invaders_high')) localStorage.setItem('mg_space_invaders_high', String(highScore)); // migrate legacy key
 let lives = 3;
 let shields = [];
 let ufo = { active: false, x: 0, y: 40, dir: 1 };
 let particles = [];
 let gameRunning = false;
 let gamePaused = false;
+let autoPaused = false; // pause triggered by the tab losing focus
 let animId = null;
 let lastTime = 0;
 let keys = { left: false, right: false };
@@ -334,7 +336,7 @@ function gameOver() {
   let isNewHigh = false;
   if (score > highScore) {
     highScore = score;
-    localStorage.setItem('space_invaders_high', String(highScore));
+    localStorage.setItem('mg_space_invaders_high', String(highScore));
     highDisplay.textContent = highScore;
     isNewHigh = true;
   }
@@ -346,8 +348,18 @@ function gameOver() {
 function togglePause() {
   if (!gameRunning) return;
   gamePaused = !gamePaused;
+  autoPaused = false;
   if (!gamePaused) lastTime = performance.now();
 }
+
+// Pause automatically when the tab loses focus; resume when it returns.
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    if (gameRunning && !gamePaused) { autoPaused = true; togglePause(); }
+  } else if (autoPaused) {
+    togglePause();
+  }
+});
 
 // ─── Update ─────────────────────────────────────────────────────────────────
 function invadersAdvance() {

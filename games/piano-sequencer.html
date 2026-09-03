@@ -768,7 +768,9 @@ function exportWAV() {
   link.download = `sequencer-${bpm}bpm-${WAVE_TYPES[currentWaveIdx]}.wav`;
   link.href = URL.createObjectURL(blob);
   link.click();
-  URL.revokeObjectURL(link.href);
+  // Defer revoke: some browsers (Safari) cancel the download if the URL is
+  // revoked before the browser has started fetching it.
+  setTimeout(() => URL.revokeObjectURL(link.href), 10000);
 }
 
 // ─── Event Listeners ────────────────────────────────────────────────────────

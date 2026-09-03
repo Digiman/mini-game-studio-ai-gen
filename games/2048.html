@@ -191,7 +191,8 @@ const gameOverOverlay = document.getElementById('gameOverOverlay');
 // ─── Game State ─────────────────────────────────────────────────────────────
 let grid = [];          // board[row][col] => value or null
 let score = 0;
-let best = parseInt(localStorage.getItem('2048_high') || '0', 10);
+let best = parseInt(localStorage.getItem('mg_2048_high') || localStorage.getItem('2048_high') || '0', 10);
+if (best > 0 && !localStorage.getItem('mg_2048_high') && localStorage.getItem('2048_high')) localStorage.setItem('mg_2048_high', String(best)); // migrate legacy key
 let moves = 0;
 let history = [];       // array of { grid, score } snapshots (before each move)
 let gameRunning = false;
@@ -369,7 +370,7 @@ function gameOver() {
   let isNewHigh = false;
   if (score > best) {
     best = score;
-    localStorage.setItem('2048_high', String(best));
+    localStorage.setItem('mg_2048_high', String(best));
     bestDisplay.textContent = best;
     isNewHigh = true;
   }
@@ -383,7 +384,7 @@ function triggerWin() {
   let isNewHigh = false;
   if (score > best) {
     best = score;
-    localStorage.setItem('2048_high', String(best));
+    localStorage.setItem('mg_2048_high', String(best));
     bestDisplay.textContent = best;
     isNewHigh = true;
   }

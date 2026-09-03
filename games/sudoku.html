@@ -263,8 +263,9 @@ function hasUniqueSolution(grid){
 function makePuzzle(blanksTarget){ // symmetric pair removal, keep unique
   const solved=generateSolved();
   const p=solved.map(r=>r.slice());
-  let removed=0;
-  while(removed<blanksTarget){
+  let removed=0, attempts=0;
+  while(removed<blanksTarget && attempts<300){
+    attempts++;
     const r=Math.floor(Math.random()*9), c=Math.floor(Math.random()*9);
     const rr=8-r, cc=8-c;
     if(p[r][c]===0)continue;
@@ -441,6 +442,18 @@ function fmt(s){
 function tick(){ elapsed=Math.max(0,Math.floor((Date.now()-startTime)/1000)); timerDisplay.textContent=fmt(elapsed); }
 function startTimer(){ startTime=Date.now(); elapsed=0; timerDisplay.textContent='00:00'; timerId=setInterval(tick,500); }
 function stopTimer(){ if(timerId){clearInterval(timerId); timerId=null;} }
+// Pause the clock while the tab is hidden: stop ticking and shift startTime
+// forward by the hidden duration so the hidden time doesn't count.
+let hiddenAt=0; // when the tab lost focus
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    if (gameRunning && timerId) { hiddenAt = Date.now(); stopTimer(); }
+  } else if (hiddenAt) {
+    startTime += Date.now() - hiddenAt;
+    hiddenAt = 0;
+    if (gameRunning) timerId = setInterval(tick, 500);
+  }
+});
 
 // ─── New game / win / reset ──────────────────────────────────────────────────
 function newGame(){
@@ -504,10 +517,12 @@ function win(){
 }
 
 function loadBest(){
-  const v=localStorage.getItem('sudoku_best_'+difficulty);
+  const k='mg_sudoku_best_'+difficulty, ok='sudoku_best_'+difficulty;
+  const v=localStorage.getItem(k)||localStorage.getItem(ok);
+  if(v!==null && !localStorage.getItem(k)) localStorage.setItem(k, v); // migrate legacy key
   return v===null?null:parseInt(v,10);
 }
-function saveBest(t){ localStorage.setItem('sudoku_best_'+difficulty,String(t)); }
+function saveBest(t){ localStorage.setItem('mg_sudoku_best_'+difficulty,String(t)); }
 
 function updateBestDisplay(){
   if(bestTime===null){ bestLabel.textContent='Best'; bestDisplay.textContent='–'; }

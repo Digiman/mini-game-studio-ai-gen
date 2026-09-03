@@ -284,7 +284,8 @@ const startOverlay = document.getElementById('startOverlay');
 const gameOverOverlay = document.getElementById('gameOverOverlay');
 
 // ─── High Score ─────────────────────────────────────────────────────────────
-let highScore = parseInt(localStorage.getItem('asteroid_high') || '0', 10);
+let highScore = parseInt(localStorage.getItem('mg_asteroids_high') || localStorage.getItem('asteroid_high') || '0', 10);
+if (highScore > 0 && !localStorage.getItem('mg_asteroids_high') && localStorage.getItem('asteroid_high')) localStorage.setItem('mg_asteroids_high', String(highScore)); // migrate legacy key
 highDisplay.textContent = highScore;
 
 // ─── Utility ────────────────────────────────────────────────────────────────
@@ -303,6 +304,7 @@ let wave = 1;
 let lives = 3;
 let gameRunning = false;
 let gamePaused = false;
+let autoPaused = false; // pause triggered by the tab losing focus
 let animId = null;
 
 // ─── Ship ───────────────────────────────────────────────────────────────────
@@ -693,7 +695,7 @@ function gameOver() {
   let isNewHigh = false;
   if (score > highScore) {
     highScore = score;
-    localStorage.setItem('asteroid_high', String(highScore));
+    localStorage.setItem('mg_asteroids_high', String(highScore));
     highDisplay.textContent = highScore;
     isNewHigh = true;
   }
@@ -751,6 +753,7 @@ const keys = { left: false, right: false, up: false, shoot: false };
 document.addEventListener('keydown', (e) => {
   if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') {
     if (!gameRunning) return;
+    autoPaused = false;
     gamePaused = !gamePaused;
     if (!gamePaused) {
       lastTime = 0;
@@ -797,6 +800,18 @@ function processRotation() {
 }
 // Start rotation processor (separate from game loop so it works during pause menu)
 processRotation();
+
+// Pause automatically when the tab loses focus; resume when it returns.
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    if (gameRunning && !gamePaused) { autoPaused = true; gamePaused = true; }
+  } else if (autoPaused) {
+    autoPaused = false;
+    gamePaused = false;
+    lastTime = 0;
+    animId = requestAnimationFrame(loop);
+  }
+});
 
 // ─── Buttons ────────────────────────────────────────────────────────────────
 document.getElementById('startBtn').addEventListener('click', startGame);

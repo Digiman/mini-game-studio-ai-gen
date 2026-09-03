@@ -92,13 +92,16 @@ const startBtn = document.getElementById('startBtn');
 const restartBtn = document.getElementById('restartBtn');
 
 let mode = 'breakout'; // 'pong' or 'breakout'
-let highScore = parseInt(localStorage.getItem('pong_high')||'0',10);
+let highScore = parseInt(localStorage.getItem('mg_pong_breakout_high') || localStorage.getItem('pong_high') || '0', 10);
+if (highScore > 0 && !localStorage.getItem('mg_pong_breakout_high') && localStorage.getItem('pong_high')) localStorage.setItem('mg_pong_breakout_high', String(highScore)); // migrate legacy key
 highDisplay.textContent = highScore;
 
 let paddle = {x:250, y:380, w:100, h:10};
 let ball = {x:300, y:360, r:6, dx:0, dy:0, speed:5};
 let bricks = [];
 let score = 0, lives = 3, gameRunning = false, launched = false;
+let gamePaused = false;
+let autoPaused = false; // pause triggered by the tab losing focus
 let keys = {left:false, right:false};
 let animId = null;
 
@@ -122,9 +125,20 @@ function initGame() {
   gameOverOverlay.classList.remove('active');
   startOverlay.classList.remove('active');
   gameRunning = true;
+  gamePaused = false;
   if (animId) cancelAnimationFrame(animId);
   loop();
 }
+
+// Pause automatically when the tab loses focus; resume when it returns.
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    if (gameRunning && !gamePaused) { autoPaused = true; gamePaused = true; }
+  } else if (autoPaused) {
+    autoPaused = false;
+    gamePaused = false;
+  }
+});
 
 function launchBall() {
   if (launched) return;
@@ -143,14 +157,14 @@ function gameOver() {
   finalScore.textContent = score;
   if (score > highScore) {
     highScore = score;
-    localStorage.setItem('pong_high', String(highScore));
+    localStorage.setItem('mg_pong_breakout_high', String(highScore));
     highDisplay.textContent = highScore;
   }
   gameOverOverlay.classList.add('active');
 }
 
 function loop() {
-  if (!gameRunning) { animId = requestAnimationFrame(loop); return; }
+  if (!gameRunning || gamePaused) { animId = requestAnimationFrame(loop); return; }
   // Paddle movement
   if (keys.left) paddle.x = Math.max(0, paddle.x - 6);
   if (keys.right) paddle.x = Math.min(W-paddle.w, paddle.x + 6);
@@ -220,7 +234,17 @@ function loop() {
         if (ball.x + ball.r > b.x && ball.x - ball.r < b.x + b.w &&
             ball.y + ball.r > b.y && ball.y - ball.r < b.y + b.h) {
           b.alive = false;
-          ball.dy = -ball.dy;
+          // Flip the axis with the smaller penetration, and push the ball out
+          // of the brick so it can't be re-hit on the next frame.
+          const overlapX = Math.min(ball.x + ball.r - b.x, b.x + b.w - (ball.x - ball.r));
+          const overlapY = Math.min(ball.y + ball.r - b.y, b.y + b.h - (ball.y - ball.r));
+          if (overlapX < overlapY) {
+            ball.dx = -ball.dx;
+            ball.x += ball.dx > 0 ? overlapX + 0.01 : -(overlapX + 0.01);
+          } else {
+            ball.dy = -ball.dy;
+            ball.y += ball.dy > 0 ? overlapY + 0.01 : -(overlapY + 0.01);
+          }
           score += 10; scoreDisplay.textContent = score;
           ball.speed = Math.min(8, ball.speed + 0.05);
           break;
