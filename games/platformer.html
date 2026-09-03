@@ -249,6 +249,7 @@ let coins = 0;
 let lives = 3;
 let gameRunning = false;
 let gamePaused = false;
+let autoPaused = false; // pause triggered by the tab losing focus
 let startTime = 0;
 let elapsed = 0;
 let player = null;
@@ -679,10 +680,20 @@ function setKey(e, val) {
 }
 document.addEventListener('keydown', (e) => {
   if (e.key === 'r' || e.key === 'R') { loadLevel(levelIdx, true); return; }
-  if (e.key === 'p' || e.key === 'P') { if (gameRunning) gamePaused = !gamePaused; return; }
+  if (e.key === 'p' || e.key === 'P') { if (gameRunning) { autoPaused = false; gamePaused = !gamePaused; } return; }
   setKey(e, true);
 });
 document.addEventListener('keyup', (e) => setKey(e, false));
+
+// Pause automatically when the tab loses focus; resume when it returns.
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    if (gameRunning && !gamePaused) { autoPaused = true; gamePaused = true; }
+  } else if (autoPaused) {
+    autoPaused = false;
+    gamePaused = false;
+  }
+});
 
 // Touch controls
 function addTouch(id, check) {

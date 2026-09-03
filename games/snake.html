@@ -344,10 +344,12 @@ let activePowerups = {};  // { SPEED: remaining_ms, ... }
 let dir = 'RIGHT';
 let nextDir = 'RIGHT';
 let score = 0;
-let highScore = parseInt(localStorage.getItem('neon_snake_high') || '0', 10);
+let highScore = parseInt(localStorage.getItem('mg_snake_high') || localStorage.getItem('neon_snake_high') || '0', 10);
+if (highScore > 0 && !localStorage.getItem('mg_snake_high') && localStorage.getItem('neon_snake_high')) localStorage.setItem('mg_snake_high', String(highScore)); // migrate legacy key
 let level = 1;
 let gameRunning = false;
 let gamePaused = false;
+let autoPaused = false; // pause triggered by the tab losing focus
 let gameLoopId = null;
 let powerupTimerId = null;
 let frameCount = 0;
@@ -567,7 +569,7 @@ function gameOver() {
   let isNewHigh = false;
   if (score > highScore) {
     highScore = score;
-    localStorage.setItem('neon_snake_high', String(highScore));
+    localStorage.setItem('mg_snake_high', String(highScore));
     highDisplay.textContent = highScore;
     isNewHigh = true;
   }
@@ -768,6 +770,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key === ' ' || e.key === 'Escape') {
     e.preventDefault();
     if (!gameRunning) return;
+    autoPaused = false;
     gamePaused = !gamePaused;
     if (!gamePaused) {
       gameLoop();
@@ -785,6 +788,18 @@ document.addEventListener('keydown', (e) => {
 // ─── Buttons ────────────────────────────────────────────────────────────────
 document.getElementById('startBtn').addEventListener('click', startGame);
 document.getElementById('restartBtn').addEventListener('click', startGame);
+
+// Pause automatically when the tab loses focus (setTimeout keeps firing in
+// the background and would otherwise kill the snake while the player is away).
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    if (gameRunning && !gamePaused) { autoPaused = true; gamePaused = true; }
+  } else if (autoPaused) {
+    autoPaused = false;
+    gamePaused = false;
+    gameLoop();
+  }
+});
 
 // ─── Initial draw ───────────────────────────────────────────────────────────
 resetGame();

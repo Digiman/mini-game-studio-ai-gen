@@ -225,6 +225,8 @@ let lives = START_LIVES;
 let wave = 0;
 let kills = 0;
 let gameRunning = false;
+let gamePaused = false;
+let autoPaused = false; // pause triggered by the tab losing focus
 let spawning = false;
 let selectedType = null;        // tower type to place, or 'sell'
 let towers = [];
@@ -570,6 +572,7 @@ function draw() {
 // ─── Loop ───────────────────────────────────────────────────────────────────
 function loop(now) {
   if (!gameRunning) return;
+  if (gamePaused) { requestAnimationFrame(loop); return; }
   const dt = Math.min(0.05, (now - lastTime) / 1000 || 0.016);
   lastTime = now;
   updateWave(dt);
@@ -586,9 +589,21 @@ function startGame() {
   gameOverOverlay.classList.remove('active');
   winOverlay.classList.remove('active');
   gameRunning = true;
+  gamePaused = false;
   lastTime = performance.now();
   requestAnimationFrame(loop);
 }
+
+// Pause automatically when the tab loses focus; resume when it returns.
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    if (gameRunning && !gamePaused) { autoPaused = true; gamePaused = true; }
+  } else if (autoPaused) {
+    autoPaused = false;
+    gamePaused = false;
+    lastTime = performance.now();
+  }
+});
 
 // ─── Input / Toolbar ────────────────────────────────────────────────────────
 toolbar.querySelectorAll('.td-btn[data-type]').forEach(b => {

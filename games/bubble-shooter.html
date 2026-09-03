@@ -165,10 +165,13 @@ let aimAngle = -Math.PI / 2;
 let projectile = null;   // {x, y, dx, dy, color}
 let queue = [];       // upcoming colors [current, next, ...]
 let score = 0;
-let highScore = parseInt(localStorage.getItem('neon_bubble_high') || '0', 10);
+let highScore = parseInt(localStorage.getItem('mg_bubble_shooter_high') || localStorage.getItem('neon_bubble_high') || '0', 10);
+if (highScore > 0 && !localStorage.getItem('mg_bubble_shooter_high') && localStorage.getItem('neon_bubble_high')) localStorage.setItem('mg_bubble_shooter_high', String(highScore)); // migrate legacy key
 let level = 1;
 let poppedTotal = 0;
 let gameRunning = false;
+let gamePaused = false;
+let autoPaused = false; // pause triggered by the tab losing focus
 let gameLoopId = null;
 
 highDisplay.textContent = highScore;
@@ -457,10 +460,21 @@ function draw(){
 // ─── Game loop ───────────────────────────────────────────────────────────────
 function gameLoop(){
   if(!gameRunning) return;
+  if(gamePaused){ gameLoopId = requestAnimationFrame(gameLoop); return; }
   stepProjectile();
   draw();
   gameLoopId = requestAnimationFrame(gameLoop);
 }
+
+// Pause automatically when the tab loses focus; resume when it returns.
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    if (gameRunning && !gamePaused) { autoPaused = true; gamePaused = true; }
+  } else if (autoPaused) {
+    autoPaused = false;
+    gamePaused = false;
+  }
+});
 
 // ─── Start / Over ────────────────────────────────────────────────────────────
 function startGame(){
@@ -484,7 +498,7 @@ function gameOver(){
   let isNew = false;
   if(score > highScore){
     highScore = score;
-    localStorage.setItem('neon_bubble_high', String(highScore));
+    localStorage.setItem('mg_bubble_shooter_high', String(highScore));
     highDisplay.textContent = highScore;
     isNew = true;
   }

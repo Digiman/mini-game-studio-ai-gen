@@ -97,14 +97,56 @@ let seq = { sequence: [], playerSeq: [], step: 0, showing: false, showTimer: nul
 // ─── Chaser ──
 let chaser = { x: 250, y: 250, dx: 2, dy: 1.5, hits: 0, total: 0, startTime: 0, active: false, radius: 20 };
 
-let bestTimes = JSON.parse(localStorage.getItem('reaction_best') || '{}');
+let bestTimes = JSON.parse(localStorage.getItem('mg_reaction_best') || localStorage.getItem('reaction_best') || '{}');
+if (Object.keys(bestTimes).length && !localStorage.getItem('mg_reaction_best') && localStorage.getItem('reaction_best')) localStorage.setItem('mg_reaction_best', JSON.stringify(bestTimes)); // migrate legacy key
 let gameActive = false;
 let animId = null;
+let gamePaused = false, hiddenAt = 0;
+
+// Pause: stop the rAF loop and pending sequence timer, remembering the wall
+// clock so the hidden time can be excluded from timing on resume.
+function pauseGame() {
+  if (!gameActive || gamePaused) return;
+  gamePaused = true;
+  hiddenAt = performance.now();
+  if (animId) cancelAnimationFrame(animId);
+  if (seq.showTimer) { clearTimeout(seq.showTimer); seq.showTimer = null; }
+}
+
+function resumeGame() {
+  if (!gamePaused) return;
+  const hiddenMs = performance.now() - hiddenAt;
+  gamePaused = false;
+  if (!gameActive) return;
+  const mode = MODES[modeIdx].id;
+  if (mode === 'aim') {
+    aim.startTime += hiddenMs;
+    aim.targets.forEach(t => { t.born += hiddenMs; });
+    animId = requestAnimationFrame(loopAim);
+  } else if (mode === 'sequence') {
+    if (seq.showStart) seq.showStart += hiddenMs;
+    if (seq.phase === 'showing') {
+      const remaining = seq.sequence.length * 600 - (performance.now() - seq.showStart);
+      seq.showTimer = setTimeout(() => {
+        seq.phase = 'input'; seq.showing = false; seq.playerSeq = []; seq.step = 0;
+      }, Math.max(50, remaining));
+    }
+    animId = requestAnimationFrame(loopSequence);
+  } else {
+    chaser.startTime += hiddenMs;
+    animId = requestAnimationFrame(loopChaser);
+  }
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) pauseGame();
+  else resumeGame();
+});
 
 function getBest() { return bestTimes[MODES[modeIdx].id] || null; }
 function setBest(t) {
   const id = MODES[modeIdx].id;
-  if (!bestTimes[id] || t < bestTimes[id]) { bestTimes[id] = t; localStorage.setItem('reaction_best', JSON.stringify(bestTimes)); }
+  if (!bestTimes[id] || t < bestTimes[id]) { bestTimes[id] = t; localStorage.setItem('mg_reaction_best', JSON.stringify(bestTimes)); }
   updateDisplays();
 }
 
