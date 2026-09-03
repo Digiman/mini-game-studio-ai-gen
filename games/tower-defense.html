@@ -350,10 +350,16 @@ function updateTowers(dt) {
     const bonus = 1 + (t.level - 1) * 0.4;
     const range = def.range * (1 + (t.level - 1) * 0.15);
     if (t.cooldown > 0) continue;
-    let target = null;
+    let target = null, bestProgress = -1;
     for (const e of enemies) {
       const d = Math.hypot(e.x - (t.x * CELL + CELL / 2), e.y - (t.y * CELL + CELL / 2));
-      if (d <= range) { target = e; break; }
+      if (d > range) continue;
+      // Progress along the path: waypoints completed + fraction toward the next one.
+      const wp = pathPoints[e.waypoint];
+      const progress = wp
+        ? e.waypoint * CELL + (CELL - Math.hypot(e.x - wp.x, e.y - wp.y))
+        : e.waypoint * CELL;
+      if (progress > bestProgress) { bestProgress = progress; target = e; }
     }
     if (!target) continue;
     t.cooldown = def.rate;
@@ -367,8 +373,9 @@ function updateTowers(dt) {
 }
 
 function updateProjectiles(dt) {
+  const dead = [];
   for (const p of projectiles) {
-    if (!p.target || p.target.hp <= 0) { projectiles = projectiles.filter(x => x !== p); continue; }
+    if (!p.target || p.target.hp <= 0) { dead.push(p); continue; }
     const dx = p.target.x - p.x, dy = p.target.y - p.y;
     const dist = Math.hypot(dx, dy);
     const step = p.speed * dt;
@@ -387,15 +394,17 @@ function updateProjectiles(dt) {
       }
       kills += ctx2.kills;
       updateHUD();
-      projectiles = projectiles.filter(x => x !== p);
+      dead.push(p);
     } else {
       p.x += dx / dist * step;
       p.y += dy / dist * step;
     }
   }
+  if (dead.length) projectiles = projectiles.filter(x => !dead.includes(x));
 }
 
 function updateEnemies(dt) {
+  const dead = [];
   for (const e of enemies) {
     let speed = e.speed;
     if (e.slowTimer > 0) { e.slowTimer -= dt; speed *= 0.5; }
@@ -410,7 +419,7 @@ function updateEnemies(dt) {
       e.waypoint++;
       if (e.waypoint >= pathPoints.length) {
         // reached end
-        enemies = enemies.filter(x => x !== e);
+        dead.push(e);
         lives--;
         gold += 1;
         updateHUD();
@@ -421,6 +430,7 @@ function updateEnemies(dt) {
       e.y += dy / dist * step;
     }
   }
+  if (dead.length) enemies = enemies.filter(x => !dead.includes(x));
 }
 
 function updateHUD() {

@@ -285,6 +285,7 @@ function parseLevel(map) {
 
 // ─── Player physics ─────────────────────────────────────────────────────────
 function resetPlayer() {
+  jumpQueued = false;
   player = {
     x: playerStart.x, y: playerStart.y,
     w: 24, h: 28, vx: 0, vy: 0,
@@ -305,20 +306,23 @@ function movePlayer(dt, keys) {
   if (keys.left) ax -= 1;
   if (keys.right) ax += 1;
   player.vx += ax * accel * dt;
-  player.vx *= Math.pow(0.0001, dt); // friction damp
+  player.vx *= Math.pow(0.0144, dt); // friction damp: terminal velocity ~= maxSpeed (220 px/s)
   if (!ax) player.vx *= Math.pow(0.0006, dt);
   player.vx = Math.max(-maxSpeed, Math.min(maxSpeed, player.vx));
   if (ax) player.facing = ax > 0 ? 1 : -1;
 
-  // Jump
-  if (keys.jump && player.onGround) {
-    player.vy = -jumpVel;
-    player.onGround = false;
-    player.jumps = 1;
-  } else if (keys.jump && player.jumps < 2) {
-    // double jump
-    player.vy = -jumpVel * 0.85;
-    player.jumps = 2;
+  // Jump (edge-triggered: one jump per key press, consumed in movePlayer)
+  if (jumpQueued) {
+    jumpQueued = false;
+    if (player.onGround) {
+      player.vy = -jumpVel;
+      player.onGround = false;
+      player.jumps = 1;
+    } else if (player.jumps < 2) {
+      // double jump
+      player.vy = -jumpVel * 0.85;
+      player.jumps = 2;
+    }
   }
 
   player.vy += gravity * dt;
@@ -630,6 +634,7 @@ function drawAll() {
 
 // ─── Main loop ──────────────────────────────────────────────────────────────
 const keys = { left: false, right: false, jump: false, jumpHeld: false };
+let jumpQueued = false;
 
 function loop(now) {
   if (!gameRunning) return;
@@ -664,7 +669,12 @@ function setKey(e, val) {
   switch (e.key) {
     case 'ArrowLeft': case 'a': case 'A': keys.left = val; e.preventDefault(); break;
     case 'ArrowRight': case 'd': case 'D': keys.right = val; e.preventDefault(); break;
-    case 'ArrowUp': case 'w': case 'W': case ' ': keys.jump = val; e.preventDefault(); break;
+    case 'ArrowUp': case 'w': case 'W': case ' ': {
+      e.preventDefault();
+      if (val && !keys.jump) jumpQueued = true; // queue on press, not while held
+      keys.jump = val;
+      break;
+    }
   }
 }
 document.addEventListener('keydown', (e) => {

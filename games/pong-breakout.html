@@ -220,7 +220,17 @@ function loop() {
         if (ball.x + ball.r > b.x && ball.x - ball.r < b.x + b.w &&
             ball.y + ball.r > b.y && ball.y - ball.r < b.y + b.h) {
           b.alive = false;
-          ball.dy = -ball.dy;
+          // Flip the axis with the smaller penetration, and push the ball out
+          // of the brick so it can't be re-hit on the next frame.
+          const overlapX = Math.min(ball.x + ball.r - b.x, b.x + b.w - (ball.x - ball.r));
+          const overlapY = Math.min(ball.y + ball.r - b.y, b.y + b.h - (ball.y - ball.r));
+          if (overlapX < overlapY) {
+            ball.dx = -ball.dx;
+            ball.x += ball.dx > 0 ? overlapX + 0.01 : -(overlapX + 0.01);
+          } else {
+            ball.dy = -ball.dy;
+            ball.y += ball.dy > 0 ? overlapY + 0.01 : -(overlapY + 0.01);
+          }
           score += 10; scoreDisplay.textContent = score;
           ball.speed = Math.min(8, ball.speed + 0.05);
           break;

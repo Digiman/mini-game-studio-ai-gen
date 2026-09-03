@@ -263,8 +263,9 @@ function hasUniqueSolution(grid){
 function makePuzzle(blanksTarget){ // symmetric pair removal, keep unique
   const solved=generateSolved();
   const p=solved.map(r=>r.slice());
-  let removed=0;
-  while(removed<blanksTarget){
+  let removed=0, attempts=0;
+  while(removed<blanksTarget && attempts<300){
+    attempts++;
     const r=Math.floor(Math.random()*9), c=Math.floor(Math.random()*9);
     const rr=8-r, cc=8-c;
     if(p[r][c]===0)continue;
