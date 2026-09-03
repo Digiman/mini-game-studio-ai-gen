@@ -89,7 +89,7 @@ The WAV export renders the full sequencer pattern using the current waveform and
 ## File
 
 ```
-C:\AI\Projects\Test1\games\piano-sequencer.html
+games/piano-sequencer.html
 ```
 
 ## Possible Enhancements

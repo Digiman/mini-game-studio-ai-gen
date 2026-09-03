@@ -28,5 +28,5 @@ Push-box puzzle game with 5 levels, undo support, and keyboard controls.
 ## File
 
 ```
-C:\AI\Projects\Test1\games\sokoban.html
+games/sokoban.html
 ```

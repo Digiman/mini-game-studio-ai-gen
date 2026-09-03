@@ -27,5 +27,5 @@ A browser-based pixel art drawing tool with undo/redo, flood fill, configurable 
 ## File
 
 ```
-C:\AI\Projects\Test1\games\pixel-art-editor.html
+games/pixel-art-editor.html
 ```

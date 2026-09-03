@@ -60,7 +60,7 @@ Each asteroid has a randomized jagged polygon shape with 7–12 vertices, rotate
 ## File
 
 ```
-C:\AI\Projects\Test1\games\asteroids.html
+games/asteroids.html
 ```
 
 ## Possible Enhancements

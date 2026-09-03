@@ -25,5 +25,5 @@ Two classic arcade games in one HTML file. Break bricks or play Pong against an 
 ## File
 
 ```
-C:\AI\Projects\Test1\games\pong-breakout.html
+games/pong-breakout.html
 ```

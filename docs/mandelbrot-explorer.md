@@ -91,7 +91,7 @@ A single-file HTML/JS interactive fractal viewer for the Mandelbrot set. Pan, zo
 ## File
 
 ```
-C:\AI\Projects\Test1\games\mandelbrot.html
+games/mandelbrot.html
 ```
 
 ## Possible Enhancements

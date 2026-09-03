@@ -329,6 +329,7 @@ function updateToolbar() {
 function buildWave(w) {
   const queue = [];
   const count = 5 + w * 2;
+  const hasBoss = w >= 5 && w % 5 === 0;
   for (let i = 0; i < count; i++) {
     let hp = 20 + w * 9;
     let speed = 55 + w * 3;
@@ -336,6 +337,16 @@ function buildWave(w) {
     if (w >= 6 && i % 5 === 4) { type = 'fast'; hp = Math.floor(hp * 0.6); speed += 40; }
     if (w >= 12 && i % 7 === 6) { type = 'tank'; hp = Math.floor(hp * 3); speed -= 15; }
     queue.push({ dist: TOTAL_PATH_LENGTH, hp: Math.floor(hp), maxHp: Math.floor(hp), speed: Math.min(160, speed), type, reward: 4 + Math.floor(w / 4) });
+  }
+  if (hasBoss) {
+    // Boss: big HP, slow, high reward — spawns at the front of the wave
+    queue.unshift({
+      dist: TOTAL_PATH_LENGTH,
+      hp: Math.floor((60 + w * 45) * 1.5),
+      maxHp: Math.floor((60 + w * 45) * 1.5),
+      speed: 35, type: 'boss',
+      reward: 30 + w * 3,
+    });
   }
   // stagger spawns
   return queue.map((e, i) => ({ ...e, delay: i * 0.6 }));
@@ -610,16 +621,16 @@ function draw() {
 
   // Enemies
   for (const e of enemies) {
-    let col = e.type === 'fast' ? '#ffcc00' : (e.type === 'tank' ? '#ff4466' : '#66ff88');
+    let col = e.type === 'fast' ? '#ffcc00' : (e.type === 'tank' ? '#ff4466' : (e.type === 'boss' ? '#ff8800' : '#66ff88'));
     if (e.slowTimer > 0) col = '#4488ff';
     ctx.fillStyle = col;
-    ctx.shadowColor = col; ctx.shadowBlur = 10;
-    ctx.beginPath(); ctx.arc(e.x, e.y, 11, 0, Math.PI*2); ctx.fill();
+    ctx.shadowColor = col; ctx.shadowBlur = e.type === 'boss' ? 24 : 10;
+    ctx.beginPath(); ctx.arc(e.x, e.y, e.type === 'boss' ? 17 : 11, 0, Math.PI*2); ctx.fill();
     ctx.shadowBlur = 0;
     // health bar
     const pct = Math.max(0, e.hp / e.maxHp);
-    ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(e.x-12, e.y-20, 24, 4);
-    ctx.fillStyle = '#ff4466'; ctx.fillRect(e.x-12, e.y-20, 24*pct, 4);
+    ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(e.x-12, e.y-22, 24, 4);
+    ctx.fillStyle = '#ff4466'; ctx.fillRect(e.x-12, e.y-22, 24*pct, 4);
   }
 
   // Projectiles

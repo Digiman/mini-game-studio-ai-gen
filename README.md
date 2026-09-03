@@ -99,7 +99,7 @@ Aim and shoot to match 3+ bubbles, pop clusters, and drop floating groups.
 ## 🗂 Project Structure
 
 ```
-Test1/
+mini-game-studio-ai-gen/
 ├── index.html                 # 🏠 Catalog homepage (22 projects)
 ├── README.md
 ├── screenshots/               # 22 PNG screenshots
