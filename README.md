@@ -2,97 +2,97 @@
 
 [![GitHub Pages](https://img.shields.io/badge/🌐-Live%20Site-ff8800?style=flat-square&logo=github)](https://digiman.github.io/mini-game-studio-ai-gen/)
 
-A collection of **22 single-file HTML/JS games and interactive tools** — no dependencies, no build steps, just open and play. Each project is self-contained in a single `.html` file with full documentation in the `docs/` folder.
+A collection of **22 single-file HTML/JS games and interactive tools** — no dependencies, no build steps, just open and play. Each project is self-contained in a single `.html` file with full documentation in `games/docs/`.
 
 ---
 
 ## 🏔️ [Landscape Generator](games/landscape-generator.html)
 Procedural pixel-art terrain with layered noise and a seed system for sharing favorites.
-📄 [Docs](docs/landscape-generator.md)
+📄 [Docs](games/docs/landscape-generator.md)
 
 ## 🐍 [Neon Snake](games/snake.html)
 Classic snake with neon visuals, 5 power-ups, and progressive speed ramping.
-📄 [Docs](docs/snake-game.md)
+📄 [Docs](games/docs/snake-game.md)
 
 ## ☄️ [Asteroid Shooter](games/asteroids.html)
 Arcade space shooter where asteroids break apart. Waves, lives, and explosions.
-📄 [Docs](docs/asteroid-shooter.md)
+📄 [Docs](games/docs/asteroid-shooter.md)
 
 ## ✦ [Particle Sandbox](games/particle-sandbox.html)
 Physics playground with gravity, wind, collisions, and bouncing particles.
-📄 [Docs](docs/particle-sandbox.md)
+📄 [Docs](games/docs/particle-sandbox.md)
 
 ## 🌀 [Mandelbrot Explorer](games/mandelbrot.html)
 Infinite zoom fractal viewer with 5 psychedelic color palettes.
-📄 [Docs](docs/mandelbrot-explorer.md)
+📄 [Docs](games/docs/mandelbrot-explorer.md)
 
 ## 🎹 [Mini Piano / Sequencer](games/piano-sequencer.html)
 Playable piano with step sequencer, 4 waveforms, visualizer, and WAV export.
-📄 [Docs](docs/piano-sequencer.md)
+📄 [Docs](games/docs/piano-sequencer.md)
 
 ## 🃏 [Memory Match](games/memory-match.html)
 Flip cards to find matching pairs. Timer, move counter, configurable grid sizes.
-📄 [Docs](docs/memory-match.md)
+📄 [Docs](games/docs/memory-match.md)
 
 ## 💣 [Minesweeper](games/minesweeper.html)
 Classic minesweeper with flood-fill, flagging, and 3 difficulty levels.
-📄 [Docs](docs/minesweeper.md)
+📄 [Docs](games/docs/minesweeper.md)
 
 ## 🧩 [Sokoban](games/sokoban.html)
 Push-box puzzle with 5 levels, undo support, and keyboard controls.
-📄 [Docs](docs/sokoban.md)
+📄 [Docs](games/docs/sokoban.md)
 
 ## 🏓 [Pong / Breakout](games/pong-breakout.html)
 Two classics in one. Break bricks or play Pong against an AI opponent.
-📄 [Docs](docs/pong-breakout.md)
+📄 [Docs](games/docs/pong-breakout.md)
 
 ## 🌊 [Cellular Automata](games/cellular-automata.html)
 Game of Life, Sand, and Seeds. Paint cells and watch them evolve.
-📄 [Docs](docs/cellular-automata.md)
+📄 [Docs](games/docs/cellular-automata.md)
 
 ## ⚫ [Connect Four](games/connect-four.html)
 Drop four in a row. Play against Minimax AI or 2-player local.
-📄 [Docs](docs/connect-four.md)
+📄 [Docs](games/docs/connect-four.md)
 
 ## 🎨 [Pixel Art Editor](games/pixel-art-editor.html)
 Draw pixel art with undo/redo, flood fill, color palette, and PNG export.
-📄 [Docs](docs/pixel-art-editor.md)
+📄 [Docs](games/docs/pixel-art-editor.md)
 
 ## 🔮 [Reaction Test](games/reaction-test.html)
 3 modes: Aim Trainer, Sequence Recall, and Moving Target.
-📄 [Docs](docs/reaction-test.md)
+📄 [Docs](games/docs/reaction-test.md)
 
 ## ⧫ [Neon Tetris](games/tetris.html)
 Classic block stacking with ghost piece, hold, next queue, and 7-bag shuffle.
-📄 [Docs](docs/tetris.md)
+📄 [Docs](games/docs/tetris.md)
 
 ## ⚔ [Neon Tower Defense](games/tower-defense.html)
 Build towers along the enemy path and survive 20 escalating waves.
-📄 [Docs](docs/tower-defense.md)
+📄 [Docs](games/docs/tower-defense.md)
 
 ## 🚀 [Neon Platformer](games/platformer.html)
 2D platformer with double jump, enemies, hazards, and 5 handcrafted levels.
-📄 [Docs](docs/platformer.md)
+📄 [Docs](games/docs/platformer.md)
 
 ## ✚ [Neon 2048](games/2048.html)
 Slide and merge matching tiles to reach the 2048 tile. Undo, animations, and best score.
-📄 [Docs](docs/2048.md)
+📄 [Docs](games/docs/2048.md)
 
 ## 👾 [Neon Space Invaders](games/space-invaders.html)
 Retro shooter: defend with shields, shoot UFOs, and clear escalating invader waves.
-📄 [Docs](docs/space-invaders.md)
+📄 [Docs](games/docs/space-invaders.md)
 
 ## 🟩 [Neon Wordle](games/wordle.html)
 Guess the hidden word in 6 tries with color feedback. Daily and random modes with stats.
-📄 [Docs](docs/wordle.md)
+📄 [Docs](games/docs/wordle.md)
 
 ## 🧩 [Neon Sudoku](games/sudoku.html)
 Fill the 9×9 grid with notes, hints, undo, and unique puzzles in 4 difficulties.
-📄 [Docs](docs/sudoku.md)
+📄 [Docs](games/docs/sudoku.md)
 
 ## 🫧 [Neon Bubble Shooter](games/bubble-shooter.html)
 Aim and shoot to match 3+ bubbles, pop clusters, and drop floating groups.
-📄 [Docs](docs/bubble-shooter.md)
+📄 [Docs](games/docs/bubble-shooter.md)
 
 ---
 
@@ -102,9 +102,12 @@ Aim and shoot to match 3+ bubbles, pop clusters, and drop floating groups.
 mini-game-studio-ai-gen/
 ├── index.html                 # 🏠 Catalog homepage (22 projects)
 ├── README.md
-├── screenshots/               # 22 PNG screenshots
-├── docs/                      # 22 markdown files
-└── games/                     # 22 game HTML files
+├── docs/                      # 📚 Repo / tech docs (incl. plans/)
+├── scripts/                   # 🔧 Build tools (docs embed, screenshots)
+├── games/                     # 22 game HTML files
+│   └── docs/                  #   └─ per-game markdown docs (22 files)
+├── embedded-docs.js           # ⚙️ Generated docs fallback (never hand-edit)
+└── screenshots/               # 22 PNG screenshots
 ```
 
 ## 💻 Tech
@@ -131,7 +134,7 @@ The app is published automatically to **GitHub Pages**:
 - Every push to `main` triggers an automatic redeploy (see `.github/workflows/pages.yml`).
 - You can also trigger a manual redeploy from the **Actions** tab → _Deploy to GitHub Pages_ → **Run workflow**.
 
-The published site is this same static repo — `index.html` is the catalog, and every game and its docs are served directly from the `games/` and `docs/` folders.
+The published site is this same static repo — `index.html` is the catalog, and every game and its docs are served directly from the `games/` folder.
 
 ## 🤖 How It Was Built
 
@@ -145,7 +148,7 @@ This project is a showcase of **AI-assisted game development**. Every game, the 
 
 The workflow was simple: each game was requested in natural language, ZCode generated the single-file implementation, and the output was reviewed and refined in an interactive loop. All 22 games, the themed catalog (`index.html`), the documentation viewer (`docs-viewer.html`), and the served docs were produced this way.
 
-> **TL;DR** — Human ideas + AI execution. Everything in `games/`, `docs/`, and the two top-level HTML files was generated with **ZCode + OpenRouter + DeepSeek V4 Flash**.
+> **TL;DR** — Human ideas + AI execution. Everything in `games/`, `games/docs/`, and the two top-level HTML files was generated with **ZCode + OpenRouter + DeepSeek V4 Flash**.
 
 ## 🧠 AI Model Testing
 

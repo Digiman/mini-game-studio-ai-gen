@@ -34,10 +34,10 @@ jobs:
 
       - name: Validate embedded docs are up to date
         run: |
-          node build-embedded-docs.js > /tmp/embedded-docs.js
+          node scripts/build-embedded-docs.js > /tmp/embedded-docs.js
           diff /tmp/embedded-docs.js embedded-docs.js \
             && echo "embedded-docs.js is current" \
-            || { echo "embedded-docs.js is out of date — run: node build-embedded-docs.js > embedded-docs.js"; exit 1; }
+            || { echo "embedded-docs.js is out of date — run: node scripts/build-embedded-docs.js > embedded-docs.js"; exit 1; }
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v4

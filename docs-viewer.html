@@ -537,8 +537,8 @@ function loadDoc(gameId) {
   closeSidebar();
   contentEl.innerHTML = '<div class="loading" id="loading">Loading documentation...</div>';
 
-  // Try fetching the markdown file from the docs/ folder first
-  fetch('docs/' + encodeURIComponent(game.id) + '.md')
+  // Try fetching the markdown file from the games/docs/ folder first
+  fetch('games/docs/' + encodeURIComponent(game.id) + '.md')
     .then(function(res) {
       if (!res.ok) throw new Error('Not found');
       return res.text();
