@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const docsDir = path.join(__dirname, 'docs');
+const docsDir = path.join(__dirname, '..', 'games', 'docs');
 const files = fs.readdirSync(docsDir).filter(f => f.endsWith('.md'));
 
 let result = '// Auto-generated embedded docs\nconst DOCS = {\n';
