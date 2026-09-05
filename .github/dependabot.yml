@@ -1,0 +1,15 @@
+# Keep GitHub Actions up to date weekly.
+# This repo has no package.json / npm deps — the only updatable
+# dependency is the Actions workflow, so that's the only ecosystem.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    groups:
+      actions:
+        patterns:
+          - "*"
